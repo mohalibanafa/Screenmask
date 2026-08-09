@@ -7,6 +7,9 @@ on:
     branches: [ "main", "master" ]
   workflow_dispatch: # Allows manual trigger from GitHub UI
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build & Sign APK
@@ -63,3 +66,15 @@ jobs:
         with:
           name: app-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Release v1.0.${{ github.run_number }}
+          body: ${{ github.event.head_commit.message }}
+          files: app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

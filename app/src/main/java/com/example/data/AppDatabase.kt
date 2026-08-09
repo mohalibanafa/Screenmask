@@ -5,10 +5,9 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [MaskEntity::class, DesignProjectEntity::class], version = 2, exportSchema = false)
+@Database(entities = [MaskEntity::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun maskDao(): MaskDao
-    abstract fun designProjectDao(): DesignProjectDao
 
     companion object {
         @Volatile
