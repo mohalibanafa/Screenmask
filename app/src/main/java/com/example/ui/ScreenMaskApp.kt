@@ -28,12 +28,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
@@ -51,7 +53,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -74,6 +75,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.MaskEntity
+import com.example.editor.ui.DesignEditorScreen
 import com.example.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -85,12 +87,23 @@ fun ScreenMaskApp(viewModel: MainViewModel) {
         viewModel.checkOverlayPermission(context)
     }
 
+    var isDesignEditorOpen by remember { mutableStateOf(false) }
+
+    if (isDesignEditorOpen) {
+        DesignEditorScreen(
+            viewModel = viewModel,
+            onBack = { isDesignEditorOpen = false }
+        )
+        return
+    }
+
     val hasPermission by viewModel.hasOverlayPermission.collectAsStateWithLifecycle()
     val isServiceActive by viewModel.isServiceActive.collectAsStateWithLifecycle()
     val isEditMode by viewModel.isEditMode.collectAsStateWithLifecycle()
     val masks by viewModel.masks.collectAsStateWithLifecycle()
     val selectedMaskId by viewModel.selectedMaskId.collectAsStateWithLifecycle()
     val startOnBoot by viewModel.startOnBoot.collectAsStateWithLifecycle()
+    val activeProject by viewModel.activeDesignProject.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -98,15 +111,15 @@ fun ScreenMaskApp(viewModel: MainViewModel) {
                 title = {
                     Column(modifier = Modifier.padding(vertical = 4.dp)) {
                         Text(
-                            text = "Screen Masker",
+                            text = "Screen Masker Studio",
                             fontWeight = FontWeight.ExtraBold,
-                            fontSize = 24.sp,
+                            fontSize = 22.sp,
                             letterSpacing = (-0.5).sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = if (isServiceActive) "Service Running • $masks Active Mask(s)" else "Open Source • Service Inactive",
-                            fontSize = 12.sp,
+                            text = if (isServiceActive) "Service Active • ${masks.size} Overlay(s)" else "Vector Mask Design Studio",
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -127,7 +140,7 @@ fun ScreenMaskApp(viewModel: MainViewModel) {
                             .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            text = if (isServiceActive) "RUNNING" else "OFF",
+                            text = if (isServiceActive) "ACTIVE" else "STOPPED",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.ExtraBold,
                             color = if (isServiceActive) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
@@ -161,7 +174,56 @@ fun ScreenMaskApp(viewModel: MainViewModel) {
                 }
             }
 
-            // 2. Master Control Panel Card
+            // 2. Open Full Screen Design Editor Banner (PROMINENT CALL TO ACTION)
+            item {
+                Card(
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { isDesignEditorOpen = true }
+                        .testTag("banner_open_design_editor")
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .padding(20.dp)
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(22.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Design Studio (محرر التصميم)",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Active Canvas: ${activeProject?.name ?: "Default"} • Vector shapes, zoom & pan, snapping, numerical controls",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                            )
+                        }
+
+                        Button(
+                            onClick = { isDesignEditorOpen = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onPrimary),
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
+                            Text("Open Studio", fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+            }
+
+            // 3. Master Control Panel Card
             item {
                 MasterControlCard(
                     isServiceActive = isServiceActive,
@@ -177,7 +239,7 @@ fun ScreenMaskApp(viewModel: MainViewModel) {
                 )
             }
 
-            // 3. Active Masks Header
+            // 4. Active Masks Header
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -185,13 +247,13 @@ fun ScreenMaskApp(viewModel: MainViewModel) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Active Overlays",
+                        text = "Active Screen Overlays",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Button(
-                        onClick = { viewModel.addMask() },
+                        onClick = { isDesignEditorOpen = true },
                         enabled = hasPermission,
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -199,9 +261,9 @@ fun ScreenMaskApp(viewModel: MainViewModel) {
                         ),
                         modifier = Modifier.testTag("btn_add_mask_header")
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Brush, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Add Mask", fontWeight = FontWeight.Bold)
+                        Text("Open Canvas Editor", fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -209,7 +271,7 @@ fun ScreenMaskApp(viewModel: MainViewModel) {
             // Empty state if no masks
             if (masks.isEmpty()) {
                 item {
-                    EmptyMasksCard(onAddClicked = { viewModel.addMask() })
+                    EmptyMasksCard(onAddClicked = { isDesignEditorOpen = true })
                 }
             } else {
                 items(masks, key = { it.id }) { mask ->
@@ -223,7 +285,7 @@ fun ScreenMaskApp(viewModel: MainViewModel) {
                 }
             }
 
-            // 4. Application Settings & Usage Guide
+            // 5. Application Settings & Usage Guide
             item {
                 SettingsAndGuideCard(
                     startOnBoot = startOnBoot,
@@ -240,7 +302,7 @@ fun ScreenMaskApp(viewModel: MainViewModel) {
 fun PermissionWarningCard(onGrantClicked: () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF451A03) // Deep Amber
+            containerColor = Color(0xFF451A03)
         ),
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier.fillMaxWidth().testTag("card_permission_warning")
@@ -303,7 +365,6 @@ fun MasterControlCard(
             .testTag("card_master_control")
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            // Main Service Switch Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -311,13 +372,13 @@ fun MasterControlCard(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Active Overlays",
+                        text = "Real-Time Screen Overlays",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     Text(
-                        text = if (isServiceActive) "Masks actively drawing over screen" else "Service currently stopped",
+                        text = if (isServiceActive) "Overlays actively drawing on screen" else "Service currently stopped",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
@@ -388,7 +449,6 @@ fun MasterControlCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Quick Control Buttons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -467,7 +527,6 @@ fun MaskItemCard(
             .testTag("card_mask_item_${mask.id}")
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Summary Header Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -497,7 +556,6 @@ fun MaskItemCard(
                 }
 
                 Row {
-                    // Lock Toggle Button
                     IconButton(
                         onClick = { onUpdate(mask.copy(isLocked = !mask.isLocked)) },
                         modifier = Modifier.size(36.dp)
@@ -510,7 +568,6 @@ fun MaskItemCard(
                         )
                     }
 
-                    // Visibility Toggle Button
                     IconButton(
                         onClick = { onUpdate(mask.copy(isVisible = !mask.isVisible)) },
                         modifier = Modifier.size(36.dp)
@@ -523,7 +580,6 @@ fun MaskItemCard(
                         )
                     }
 
-                    // Delete Button
                     IconButton(
                         onClick = onDelete,
                         modifier = Modifier.size(36.dp)
@@ -538,7 +594,6 @@ fun MaskItemCard(
                 }
             }
 
-            // Fine Tuning Sliders & Settings
             AnimatedVisibility(
                 visible = expanded,
                 enter = expandVertically() + fadeIn(),
@@ -560,21 +615,18 @@ fun MaskItemCard(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Position X Slider
                     SliderSettingRow(
                         label = "X Position (${(mask.xRatio * 100).toInt()}%)",
                         value = mask.xRatio,
                         onValueChange = { onUpdate(mask.copy(xRatio = it)) }
                     )
 
-                    // Position Y Slider
                     SliderSettingRow(
                         label = "Y Position (${(mask.yRatio * 100).toInt()}%)",
                         value = mask.yRatio,
                         onValueChange = { onUpdate(mask.copy(yRatio = it)) }
                     )
 
-                    // Width Slider
                     SliderSettingRow(
                         label = "Width (${(mask.widthRatio * 100).toInt()}%)",
                         value = mask.widthRatio,
@@ -582,7 +634,6 @@ fun MaskItemCard(
                         onValueChange = { onUpdate(mask.copy(widthRatio = it)) }
                     )
 
-                    // Height Slider
                     SliderSettingRow(
                         label = "Height (${(mask.heightRatio * 100).toInt()}%)",
                         value = mask.heightRatio,
@@ -592,7 +643,6 @@ fun MaskItemCard(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Color Preset Picker
                     Text(
                         text = "Mask Color & Opacity",
                         fontSize = 12.sp,
@@ -710,20 +760,20 @@ fun EmptyMasksCard(onAddClicked: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                Icons.Default.Add,
+                Icons.Default.Palette,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(40.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "No Screen Masks Created Yet",
+                text = "No Active Screen Masks",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.ExtraBold
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Tap '+ Add Mask' to create a black rectangular mask overlay for damaged screen areas.",
+                text = "Open the Vector Design Studio to draw, position, and customize custom shapes and masks for your phone.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -734,7 +784,7 @@ fun EmptyMasksCard(onAddClicked: () -> Unit) {
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 modifier = Modifier.testTag("btn_empty_add")
             ) {
-                Text("Create First Mask", fontWeight = FontWeight.Bold)
+                Text("Open Design Studio", fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -763,7 +813,6 @@ fun SettingsAndGuideCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Start on boot switch
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -790,7 +839,6 @@ fun SettingsAndGuideCard(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Quick instructions list
             Column(
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
@@ -799,11 +847,11 @@ fun SettingsAndGuideCard(
             ) {
                 Text(text = "💡 How it works:", fontWeight = FontWeight.ExtraBold, fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.height(6.dp))
-                Text(text = "1. Edit Mode: Drag center or corner handles to position black masks over damaged screen spots.", fontSize = 11.sp, lineHeight = 16.sp)
+                Text(text = "1. Design Studio: Full-screen virtual canvas simulating physical screen. Place rectangles, rounded notches, circles, lines, polygons, and freehand shapes.", fontSize = 11.sp, lineHeight = 16.sp)
                 Spacer(modifier = Modifier.height(2.dp))
-                Text(text = "2. Block Mode: Borders & handles disappear. Pure black (RGB 0,0,0) covers dead pixels while all touch events pass directly to apps below.", fontSize = 11.sp, lineHeight = 16.sp)
+                Text(text = "2. Numerical Precision: Edit exact pixel coordinates (X, Y, W, H, Rotation, Opacity) or use touch handles with auto-snapping.", fontSize = 11.sp, lineHeight = 16.sp)
                 Spacer(modifier = Modifier.height(2.dp))
-                Text(text = "3. Quick Settings Tile: Add the 'Screen Mask' tile to your Android notification shade for 1-tap toggle.", fontSize = 11.sp, lineHeight = 16.sp)
+                Text(text = "3. Apply / Run: Renders pure black overlays over dead pixels while allowing touch pass-through in Block Mode.", fontSize = 11.sp, lineHeight = 16.sp)
             }
         }
     }
