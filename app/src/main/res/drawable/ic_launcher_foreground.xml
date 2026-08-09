@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Phone Body Outer Frame -->
+    <path
+        android:fillColor="#33EADDFF"
+        android:pathData="M33,20h42c5,0 9,4 9,9v50c0,5 -4,9 -9,9H33c-5,0 -9,-4 -9,-9V29c0,-5 4,-9 9,-9z" />
+
+    <!-- Screen Glass -->
+    <path
+        android:fillColor="#EADDFF"
+        android:pathData="M35,23h38c3.3,0 6,2.7 6,6v46c0,3.3 -2.7,6 -6,6H35c-3.3,0 -6,-2.7 -6,-6V29c0,-3.3 2.7,-6 6,-6z" />
+
+    <!-- Screen Notch/Speaker -->
+    <path
+        android:fillColor="#21005D"
+        android:pathData="M48,25h12c0.8,0 1.5,0.7 1.5,1.5v0c0,0.8 -0.7,1.5 -1.5,1.5H48c-0.8,0 -1.5,-0.7 -1.5,-1.5v0c0,-0.8 0.7,-1.5 1.5,-1.5z" />
+
+    <!-- Active Black Screen Mask Layer 1 -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M38,34h32v20H38z" />
+
+    <!-- Mask Edit Border (Vibrant Lavender) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#D0BCFF"
+        android:strokeWidth="2"
+        android:pathData="M38,34h32v20H38z" />
+
+    <!-- Mask Corner Edit Handles (Orange Accent) -->
+    <path
+        android:fillColor="#F27D26"
+        android:pathData="M35.5,31.5h5v5h-5zM67.5,31.5h5v5h-5zM35.5,51.5h5v5h-5zM67.5,51.5h5v5h-5z" />
+
+    <!-- Secondary Mask Block -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M44,58h22v14H44z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#6750A4"
+        android:strokeWidth="1.5"
+        android:pathData="M44,58h22v14H44z" />
+
+</vector>

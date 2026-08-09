@@ -1,0 +1,6 @@
+{
+  "name": "Screen Mask",
+  "description": "Lightweight open-source screen overlay mask tool to cover screen damage, dead pixels, or bright spots.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
