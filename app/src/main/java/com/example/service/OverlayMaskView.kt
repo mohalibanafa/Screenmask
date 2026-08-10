@@ -87,10 +87,14 @@ class OverlayMaskView(
         val green = (argb shr 8) and 0xFF
         val blue = argb and 0xFF
 
+        val colorInt = Color.argb(alphaByte, red, green, blue)
+
         maskPaint.reset()
         maskPaint.style = Paint.Style.FILL
         maskPaint.isAntiAlias = true
-        maskPaint.color = Color.argb(alphaByte, red, green, blue)
+        maskPaint.color = colorInt
+
+        setBackgroundColor(colorInt)
     }
 
     override fun onDraw(canvas: Canvas) {
