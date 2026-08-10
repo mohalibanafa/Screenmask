@@ -82,13 +82,15 @@ class OverlayMaskView(
 
     private fun updatePaint() {
         val argb = mask.colorArgb.toInt()
-        val alphaByte = (mask.alpha * 255).toInt().coerceIn(0, 255)
-        maskPaint.color = Color.argb(
-            alphaByte,
-            Color.red(argb),
-            Color.green(argb),
-            Color.blue(argb)
-        )
+        val alphaByte = if (mask.alpha >= 0.99f) 255 else (mask.alpha * 255).toInt().coerceIn(0, 255)
+        val red = (argb shr 16) and 0xFF
+        val green = (argb shr 8) and 0xFF
+        val blue = argb and 0xFF
+
+        maskPaint.reset()
+        maskPaint.style = Paint.Style.FILL
+        maskPaint.isAntiAlias = true
+        maskPaint.color = Color.argb(alphaByte, red, green, blue)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -148,8 +150,8 @@ class OverlayMaskView(
                 val currXPx = (mask.xRatio * screenWidth)
                 val currYPx = (mask.yRatio * screenHeight)
 
-                val minWidthPx = 40f * context.resources.displayMetrics.density
-                val minHeightPx = 30f * context.resources.displayMetrics.density
+                val minWidthPx = 1f
+                val minHeightPx = 1f
 
                 var newX = currXPx
                 var newY = currYPx
@@ -211,11 +213,13 @@ class OverlayMaskView(
                 lastX = rawX
                 lastY = rawY
 
-                // Convert to screen percentages
-                val newXRatio = (newX / screenWidth).coerceIn(0f, 0.95f)
-                val newYRatio = (newY / screenHeight).coerceIn(0f, 0.95f)
-                val newWRatio = (newW / screenWidth).coerceIn(0.02f, 1.0f)
-                val newHRatio = (newH / screenHeight).coerceIn(0.02f, 1.0f)
+                // Convert to screen percentages (unconstrained, down to 1px / 0.0001f)
+                val minWRatio = 1f / max(screenWidth.toFloat(), 1f)
+                val minHRatio = 1f / max(screenHeight.toFloat(), 1f)
+                val newXRatio = (newX / screenWidth).coerceIn(-0.2f, 1.0f)
+                val newYRatio = (newY / screenHeight).coerceIn(-0.2f, 1.0f)
+                val newWRatio = (newW / screenWidth).coerceIn(minWRatio, 1.0f)
+                val newHRatio = (newH / screenHeight).coerceIn(minHRatio, 1.0f)
 
                 val updated = mask.copy(
                     xRatio = newXRatio,

@@ -1,50 +1,103 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Phone Body Outer Frame -->
+    <!-- Ambient Shadow Under Layer 1 (Bottom) -->
     <path
-        android:fillColor="#33EADDFF"
-        android:pathData="M33,20h42c5,0 9,4 9,9v50c0,5 -4,9 -9,9H33c-5,0 -9,-4 -9,-9V29c0,-5 4,-9 9,-9z" />
+        android:fillColor="#30000000"
+        android:pathData="M 35,76 L 61,63 Q 64,61.5 67,63 L 74,66.5 Q 76,67.5 74,69 L 48,82 Q 45,83.5 42,82 L 35,78.5 Q 33,77.5 35,76 Z" />
 
-    <!-- Screen Glass -->
+    <!-- LAYER 1 (Bottom Sheet - Dark Indigo / Translucent) -->
     <path
-        android:fillColor="#EADDFF"
-        android:pathData="M35,23h38c3.3,0 6,2.7 6,6v46c0,3.3 -2.7,6 -6,6H35c-3.3,0 -6,-2.7 -6,-6V29c0,-3.3 2.7,-6 6,-6z" />
-
-    <!-- Screen Notch/Speaker -->
+        android:pathData="M 35,72.5 L 61,59.5 Q 64,58 67,59.5 L 74,63 Q 76,64 74,65.5 L 48,78.5 Q 45,80 42,78.5 L 35,75 Q 33,74 35,72.5 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="33"
+                android:startY="58"
+                android:endX="76"
+                android:endY="80"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#D01E1B4B" />
+                <item android:offset="1.0" android:color="#A0312E81" />
+            </gradient>
+        </aapt:attr>
+    </path>
     <path
-        android:fillColor="#21005D"
-        android:pathData="M48,25h12c0.8,0 1.5,0.7 1.5,1.5v0c0,0.8 -0.7,1.5 -1.5,1.5H48c-0.8,0 -1.5,-0.7 -1.5,-1.5v0c0,-0.8 0.7,-1.5 1.5,-1.5z" />
-
-    <!-- Active Black Screen Mask Layer 1 -->
-    <path
-        android:fillColor="#000000"
-        android:pathData="M38,34h32v20H38z" />
-
-    <!-- Mask Edit Border (Vibrant Lavender) -->
-    <path
+        android:strokeWidth="1.2"
+        android:strokeColor="#818CF8"
         android:fillColor="#00000000"
-        android:strokeColor="#D0BCFF"
-        android:strokeWidth="2"
-        android:pathData="M38,34h32v20H38z" />
+        android:pathData="M 35,72.5 L 61,59.5 Q 64,58 67,59.5 L 74,63 Q 76,64 74,65.5 L 48,78.5 Q 45,80 42,78.5 L 35,75 Q 33,74 35,72.5 Z" />
 
-    <!-- Mask Corner Edit Handles (Orange Accent) -->
+    <!-- Ambient Shadow Under Layer 2 (Middle) -->
     <path
-        android:fillColor="#F27D26"
-        android:pathData="M35.5,31.5h5v5h-5zM67.5,31.5h5v5h-5zM35.5,51.5h5v5h-5zM67.5,51.5h5v5h-5z" />
+        android:fillColor="#40000000"
+        android:pathData="M 35,62 L 61,49 Q 64,47.5 67,49 L 74,52.5 Q 76,53.5 74,55 L 48,68 Q 45,69.5 42,68 L 35,64.5 Q 33,63.5 35,62 Z" />
 
-    <!-- Secondary Mask Block -->
+    <!-- LAYER 2 (Middle Sheet - Vivid Purple / Violet) -->
     <path
-        android:fillColor="#000000"
-        android:pathData="M44,58h22v14H44z" />
+        android:pathData="M 35,58.5 L 61,45.5 Q 64,44 67,45.5 L 74,49 Q 76,50 74,51.5 L 48,64.5 Q 45,66 42,64.5 L 35,61 Q 33,60 35,58.5 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="33"
+                android:startY="44"
+                android:endX="76"
+                android:endY="66"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#E07E22CE" />
+                <item android:offset="1.0" android:color="#B0A855F7" />
+            </gradient>
+        </aapt:attr>
+    </path>
     <path
-        android:fillColor="#00000000"
-        android:strokeColor="#6750A4"
         android:strokeWidth="1.5"
-        android:pathData="M44,58h22v14H44z" />
+        android:strokeColor="#C084FC"
+        android:fillColor="#00000000"
+        android:pathData="M 35,58.5 L 61,45.5 Q 64,44 67,45.5 L 74,49 Q 76,50 74,51.5 L 48,64.5 Q 45,66 42,64.5 L 35,61 Q 33,60 35,58.5 Z" />
+
+    <!-- Ambient Shadow Under Layer 3 (Top) -->
+    <path
+        android:fillColor="#50000000"
+        android:pathData="M 35,48 L 61,35 Q 64,33.5 67,35 L 74,38.5 Q 76,39.5 74,41 L 48,54 Q 45,55.5 42,54 L 35,50.5 Q 33,49.5 35,48 Z" />
+
+    <!-- LAYER 3 (Top Sheet - Glowing Cyan / Glass Sheet) -->
+    <path
+        android:pathData="M 35,44.5 L 61,31.5 Q 64,30 67,31.5 L 74,35 Q 76,36 74,37.5 L 48,50.5 Q 45,52 42,50.5 L 35,47 Q 33,46 35,44.5 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="33"
+                android:startY="30"
+                android:endX="76"
+                android:endY="52"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#F00284C7" />
+                <item android:offset="0.5" android:color="#D038BDF8" />
+                <item android:offset="1.0" android:color="#B022D3EE" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path
+        android:strokeWidth="1.8"
+        android:strokeColor="#F0F9FF"
+        android:fillColor="#00000000"
+        android:pathData="M 35,44.5 L 61,31.5 Q 64,30 67,31.5 L 74,35 Q 76,36 74,37.5 L 48,50.5 Q 45,52 42,50.5 L 35,47 Q 33,46 35,44.5 Z" />
+
+    <!-- Corner Control Nodes (Glowing handles representing mask adjustment handles) -->
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M 64,28.5 A 1.8 1.8 0 1 1 64 32.1 A 1.8 1.8 0 1 1 64 28.5 Z" />
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M 74.5,34.5 A 1.8 1.8 0 1 1 74.5 38.1 A 1.8 1.8 0 1 1 74.5 34.5 Z" />
+    <path
+        android:fillColor="#FB923C"
+        android:pathData="M 43.5,50 A 1.8 1.8 0 1 1 43.5 53.6 A 1.8 1.8 0 1 1 43.5 50 Z" />
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M 33,44 A 1.8 1.8 0 1 1 33 47.6 A 1.8 1.8 0 1 1 33 44 Z" />
 
 </vector>
+

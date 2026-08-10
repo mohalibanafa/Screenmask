@@ -11,7 +11,6 @@ import android.view.WindowManager
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.example.R
 
 @SuppressLint("ViewClickAndTouchUnspecified")
 class FloatingControlView(
@@ -27,16 +26,15 @@ class FloatingControlView(
 
     private var isMinimized = false
     private var isEditMode = true
-    private var isLocked = false
 
     private val containerLayout = LinearLayout(context).apply {
         orientation = HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
-        val p = (8 * context.resources.displayMetrics.density).toInt()
+        val p = (6 * context.resources.displayMetrics.density).toInt()
         setPadding(p, p, p, p)
 
         background = GradientDrawable().apply {
-            setColor(Color.parseColor("#EE1E293B")) // Sleak Slate Dark 90% Opaque
+            setColor(Color.parseColor("#F20F172A")) // Deep Slate Dark 95% Opaque
             cornerRadius = 24f * context.resources.displayMetrics.density
             setStroke((1.5f * context.resources.displayMetrics.density).toInt(), Color.parseColor("#334155"))
         }
@@ -44,69 +42,87 @@ class FloatingControlView(
 
     private val dragHandle = TextView(context).apply {
         text = " ≡ "
-        textSize = 18f
+        textSize = 20f
         setTextColor(Color.parseColor("#94A3B8"))
         gravity = Gravity.CENTER
     }
 
+    // Unified Mode Button: Switches between Edit (Yellow pencil) and Lock (Blue lock)
+    private val btnMode = ImageButton(context).apply {
+        setImageResource(android.R.drawable.ic_menu_edit)
+        setBackgroundColor(Color.TRANSPARENT)
+        setColorFilter(Color.parseColor("#10B981"))
+        val size = (38 * context.resources.displayMetrics.density).toInt()
+        layoutParams = LayoutParams(size, size).apply {
+            setMargins(4, 0, 4, 0)
+        }
+        contentDescription = "تغيير الوضع"
+        setOnClickListener { onToggleEditMode() }
+    }
+
+    // Add Mask Button
     private val btnAdd = ImageButton(context).apply {
         setImageResource(android.R.drawable.ic_input_add)
         setBackgroundColor(Color.TRANSPARENT)
         setColorFilter(Color.parseColor("#38BDF8"))
-        val size = (36 * context.resources.displayMetrics.density).toInt()
+        val size = (38 * context.resources.displayMetrics.density).toInt()
         layoutParams = LayoutParams(size, size).apply {
             setMargins(4, 0, 4, 0)
         }
-        contentDescription = "Add Mask"
+        contentDescription = "إضافة مربع"
         setOnClickListener { onAddMask() }
     }
 
-    private val btnMode = ImageButton(context).apply {
-        setImageResource(android.R.drawable.ic_menu_edit)
-        setBackgroundColor(Color.TRANSPARENT)
-        setColorFilter(Color.parseColor("#F59E0B"))
-        val size = (36 * context.resources.displayMetrics.density).toInt()
-        layoutParams = LayoutParams(size, size).apply {
-            setMargins(4, 0, 4, 0)
-        }
-        contentDescription = "Toggle Mode"
-        setOnClickListener { onToggleEditMode() }
-    }
-
-    private val btnLock = ImageButton(context).apply {
-        setImageResource(android.R.drawable.ic_lock_lock)
-        setBackgroundColor(Color.TRANSPARENT)
-        setColorFilter(Color.WHITE)
-        val size = (36 * context.resources.displayMetrics.density).toInt()
-        layoutParams = LayoutParams(size, size).apply {
-            setMargins(4, 0, 4, 0)
-        }
-        contentDescription = "Lock All"
-        setOnClickListener { onToggleLockAll() }
-    }
-
+    // Delete Button (only visible when a mask is actively selected)
     private val btnDelete = ImageButton(context).apply {
         setImageResource(android.R.drawable.ic_menu_delete)
         setBackgroundColor(Color.TRANSPARENT)
         setColorFilter(Color.parseColor("#F43F5E"))
-        val size = (36 * context.resources.displayMetrics.density).toInt()
+        val size = (38 * context.resources.displayMetrics.density).toInt()
         layoutParams = LayoutParams(size, size).apply {
             setMargins(4, 0, 4, 0)
         }
-        contentDescription = "Delete Mask"
+        contentDescription = "حذف المربع المحدد"
+        visibility = View.GONE
         setOnClickListener { onDeleteSelected() }
     }
 
+    // Open Main App Button
     private val btnApp = ImageButton(context).apply {
         setImageResource(android.R.drawable.ic_menu_preferences)
         setBackgroundColor(Color.TRANSPARENT)
         setColorFilter(Color.parseColor("#A855F7"))
-        val size = (36 * context.resources.displayMetrics.density).toInt()
+        val size = (38 * context.resources.displayMetrics.density).toInt()
         layoutParams = LayoutParams(size, size).apply {
             setMargins(4, 0, 4, 0)
         }
-        contentDescription = "Open App"
+        contentDescription = "فتح التطبيق"
         setOnClickListener { onOpenApp() }
+    }
+
+    // Minimize / Collapse Bubble View
+    private val minimizedBubble = TextView(context).apply {
+        text = "⬛"
+        textSize = 20f
+        gravity = Gravity.CENTER
+        val size = (42 * context.resources.displayMetrics.density).toInt()
+        layoutParams = LayoutParams(size, size)
+        background = GradientDrawable().apply {
+            setColor(Color.parseColor("#F20F172A"))
+            cornerRadius = 21f * context.resources.displayMetrics.density
+            setStroke((2f * context.resources.displayMetrics.density).toInt(), Color.parseColor("#38BDF8"))
+        }
+        visibility = View.GONE
+        setOnClickListener { toggleMinimize() }
+    }
+
+    // Minimize Button inside expanded bar
+    private val btnMinimize = TextView(context).apply {
+        text = " ✕ "
+        textSize = 14f
+        setTextColor(Color.parseColor("#64748B"))
+        gravity = Gravity.CENTER
+        setOnClickListener { toggleMinimize() }
     }
 
     init {
@@ -114,23 +130,37 @@ class FloatingControlView(
         gravity = Gravity.CENTER
 
         containerLayout.addView(dragHandle)
-        containerLayout.addView(btnAdd)
         containerLayout.addView(btnMode)
-        containerLayout.addView(btnLock)
+        containerLayout.addView(btnAdd)
         containerLayout.addView(btnDelete)
         containerLayout.addView(btnApp)
+        containerLayout.addView(btnMinimize)
 
         addView(containerLayout)
+        addView(minimizedBubble)
 
         setupDragToMove()
+    }
+
+    private fun toggleMinimize() {
+        isMinimized = !isMinimized
+        if (isMinimized) {
+            containerLayout.visibility = View.GONE
+            minimizedBubble.visibility = View.VISIBLE
+        } else {
+            containerLayout.visibility = View.VISIBLE
+            minimizedBubble.visibility = View.GONE
+        }
     }
 
     fun updateState(editMode: Boolean, hasSelected: Boolean) {
         this.isEditMode = editMode
         if (editMode) {
-            btnMode.setColorFilter(Color.parseColor("#10B981")) // Green for Edit active
+            btnMode.setImageResource(android.R.drawable.ic_menu_edit)
+            btnMode.setColorFilter(Color.parseColor("#10B981")) // Green for Edit Mode
         } else {
-            btnMode.setColorFilter(Color.parseColor("#F59E0B")) // Amber for Block active
+            btnMode.setImageResource(android.R.drawable.ic_lock_lock)
+            btnMode.setColorFilter(Color.parseColor("#F59E0B")) // Amber for Block/Lock Mode
         }
         btnDelete.visibility = if (hasSelected) View.VISIBLE else View.GONE
     }
@@ -141,7 +171,7 @@ class FloatingControlView(
     private var initialTouchY = 0f
 
     private fun setupDragToMove() {
-        dragHandle.setOnTouchListener { _, event ->
+        val touchListener = OnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     initialX = layoutParams.x
@@ -159,5 +189,9 @@ class FloatingControlView(
                 else -> false
             }
         }
+
+        dragHandle.setOnTouchListener(touchListener)
+        minimizedBubble.setOnTouchListener(touchListener)
     }
 }
+

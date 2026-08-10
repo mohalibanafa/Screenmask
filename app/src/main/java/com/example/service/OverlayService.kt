@@ -201,15 +201,17 @@ class OverlayService : Service() {
 
         val pxX = (mask.xRatio * screenWidth).toInt()
         val pxY = (mask.yRatio * screenHeight).toInt()
-        val pxWidth = (mask.widthRatio * screenWidth).toInt().coerceAtLeast(30)
-        val pxHeight = (mask.heightRatio * screenHeight).toInt().coerceAtLeast(30)
+        val pxWidth = (mask.widthRatio * screenWidth).toInt().coerceAtLeast(1)
+        val pxHeight = (mask.heightRatio * screenHeight).toInt().coerceAtLeast(1)
+
+        val pixelFormat = if (mask.alpha >= 0.99f) PixelFormat.OPAQUE else PixelFormat.TRANSLUCENT
 
         return WindowManager.LayoutParams(
             pxWidth,
             pxHeight,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             flags,
-            PixelFormat.TRANSLUCENT
+            pixelFormat
         ).apply {
             gravity = Gravity.TOP or Gravity.START
             x = pxX
