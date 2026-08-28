@@ -1,87 +1,49 @@
-# قناع الشاشة | Screen Mask `v3.3.2` 🛡️📱
+Screen Mask v3.3.2 🛡️📱
 
-تطبيق أندرويد متطور، خفيف، ومفتوح المصدر ولا يتطلب صلاحيات الروت (No Root)، مصمم لتغطية وتعتيم المناطق المتضررة من الشاشة مثل البكسلات الميتة (Dead Pixels)، الشروخ والكسور، تسريب الإضاءة، أو وميض وحرق الشاشة، من خلال أقنعة ومجسمات عائمة مستقلة مع تحكم مرن وكامل.
+Screen Mask is a lightweight, open-source Android app that helps cover damaged or problematic areas of a screen, including dead pixels, cracks, light leaks, flickering areas, and burn-in.
 
----
+It works without root access using Android's standard floating-window system.
 
-## 🌟 أبرز الوظائف والمميزات (Features)
+✨ Features
 
-- **بدون روت (No Root Required)**: يعمل بشكل رسمي وآمن تماماً عبر واجهات أندرويد القياسية لنظام النوافذ العائمة (`WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY`).
-- **أشكال هندسية متعددة وسريعة**:
-  - ⬛ **مستطيل (Rectangle)**: لتغطية الخطوط أو أطراف الشاشة أو حواف التطبيقات.
-  - 🔵 **دائرة (Circle)**: لتغطية النقاط المحروقة أو البقع الدائرية.
-  - ▱ **شكل حر متوازي الأضلاع (Free Quad / Parallelogram)**: مع 4 مقابض مستقلة للأركان لتغطية الشروخ والكسور المائلة بدقة متناهية.
-- **وضع اللمس المباشر (Touch-Through Mode)**:
-  - **عند التفعيل**: يسمح للمسات والنقرات بالمرور من خلال المجسم والتفاعل مع التطبيقات والشاشة تحته بسلاسة تامة.
-  - **عند التعطيل**: يحجب اللمس تماماً ويعترض أي نقرات عشوائية لحماية المناطق الحساسة من اللمس الخاطئ.
-- **وضع المعاينة المصغر (Preview Eye Mode)**: إمكانية تصغير شريط التحكم بنقرة واحدة إلى فقاعة عائمة خفيفة بأيقونة المعاينة (👁️) لمشاهدة شكل الشاشة في الوقت الفعلي أثناء استخدام الهاتف بدون عوائق.
-- **شريط تحكم عائم ذكي (Floating Control Toolbar)**:
-  - إضافة الأشكال وتكرارها وحذفها مباشرة خارج التطبيق.
-  - منتقي ألوان متقدم يدعم لوحة الألوان المخصصة (Hex) وشريط الشفافية (Alpha).
-  - سلايدرات دقيقة لضبط العرض والارتفاع والموضع الأفقي والعمودي.
-- **حفظ تلقائي ودائم في قاعدة بيانات Room**: تُحفظ أبعاد ومواقع المجسمات كنسب مئوية (Screen Ratios) لضمان ثبات موقعها حتى بعد إعادة تشغيل الهاتف، تغيير اتجاه الشاشة (أفقي/عمودي)، أو اختلاف أشرطة النظام.
-- **أداء خفيف وخدمة مستمرة**: يعمل عبر خدمة أمامية موثوقة (Foreground Service) مع إشعار دائم وبلاطة إعدادات سريعة (Quick Settings Tile).
+- No Root Required — Works with standard Android permissions.
+- Multiple Shapes
+  - ⬛ Rectangles for lines, edges, and damaged areas.
+  - 🔵 Circles for spots and individual damaged pixels.
+  - ▱ Free Quad shapes with four adjustable corners for diagonal cracks and irregular areas.
+- Touch-Through Mode — Let touches pass through the mask to the app underneath.
+- Touch Blocking — Prevent accidental touches in covered areas.
+- Floating Controls — Adjust masks directly while using other apps.
+- Color & Transparency — Choose any color and control opacity precisely.
+- Precision Controls — Adjust position, width, height, and shape geometry.
+- Preview Mode — Minimize the controls into a small floating eye button.
+- Automatic Saving — Your masks and settings are saved automatically.
+- Orientation Support — Masks maintain their position when switching between portrait and landscape.
+- Persistent Operation — Masks can remain active while using other applications or after restarting the device.
 
----
+🔐 Privacy
 
-## 📱 English Overview
+Screen Mask is designed with privacy in mind.
 
-**Screen Mask** is a high-performance Android overlay utility that places customizable shapes over damaged, burned-in, flickering, or cracked screen regions.
+- Does not capture your screen.
+- Does not read accessibility events.
+- Does not collect or log private data.
+- Requires only the permissions needed for its functionality.
 
-- **Dynamic Shapes**: Rectangles, Circles, and Free-Corner Parallelograms with interactive handles.
-- **Touch-Through & Block Support**: Full control over whether touch inputs interact with underlying apps or get shielded.
-- **Minimized Preview Bubble**: Collapse the toolbar into an unobtrusive floating eye icon preview badge.
-- **Precision Customization**: Full ARGB Color Picker, Opacity slider, X/Y placement sliders, and shape duplication.
-- **Zero Privacy Intrusions**: Does not capture screens, read accessibility events, or log private data.
+🛠️ Built With
 
----
+- Kotlin
+- Jetpack Compose
+- Android Canvas
+- Room Database
+- Android Foreground Service
 
-## 🛠️ بنية المشروع والتقنيات المستخدمة (Architecture)
+📱 Requirements
 
-- **لغة البرمجة**: Kotlin 100%
-- **واجهة المستخدم**: Jetpack Compose (داخل التطبيق) + Custom Canvas Views (للطبقات العائمة)
-- **قاعدة البيانات**: Room Database (`MaskEntity`, `MaskDao`, `AppDatabase`)
-- **الخدمات الخلفية**: `OverlayService` (Foreground Service) + `ScreenMaskTileService` (Quick Settings)
+- Android device
+- Overlay permission ("Display over other apps")
+- Root access is not required
 
-```
-app/src/main/java/com/example/
-├── MainActivity.kt                  # واجهة التطبيق الرئيسية (Compose)
-├── data/
-│   ├── MaskEntity.kt                # كائن بيانات الشكل وموقعه وخصائصه
-│   ├── MaskDao.kt                   # عمليات قاعدة البيانات
-│   ├── AppDatabase.kt               # قاعدة بيانات Room
-│   ├── MaskRepository.kt            # مستودع إدارة البيانات
-│   └── AppSettingsRepository.kt     # إعدادات التطبيق والتفضيلات
-├── service/
-│   ├── OverlayService.kt            # الخدمة الأمامية لإدارة النوافذ العائمة
-│   ├── OverlayMaskView.kt           # الرسم التفاعلي للأشكال ومقابض التحكم
-│   ├── FloatingControlView.kt       # شريط الأدوات ولوحة الإعدادات العائمة
-│   ├── AdvancedColorPickerView.kt   # منتقي الألوان والشفافية المتقدم
-│   └── ScreenMaskTileService.kt     # خدمة الإعدادات السريعة (Tile)
-├── receiver/
-│   └── BootReceiver.kt              # استعادة الأشكال تلقائياً عند إقلاع الجهاز
-└── ui/
-    └── ScreenMaskApp.kt             # واجهة إدارة الأشكال والإعدادات
-```
+📄 License
 
----
-
-## 🚀 البناء والتثبيت (Build)
-
-```bash
-gradle :app:assembleDebug
-```
-ملف الـ APK الناتج: `app/build/outputs/apk/debug/app-debug.apk`
-
----
-
-## 🔒 الصلاحيات والأمان (Permissions)
-
-1. **الظهور فوق التطبيقات الأخرى (`SYSTEM_ALERT_WINDOW`)**: لعرض وتثبيت الأقنعة العائمة على الشاشة.
-2. **الخدمة الأمامية (`FOREGROUND_SERVICE`)**: لضمان استمرار عمل الأقنعة دون إغلاقها من قِبل موفر الطاقة في النظام.
-3. **تشغيل عند بدء التشغيل (`RECEIVE_BOOT_COMPLETED`)**: لتفعيل الأقنعة تلقائياً بعد إعادة التشغيل إذا تم تفعيل الخيار.
-
----
-
-## 📄 الترخيص (License)
-هذا المشروع مفتوح المصدر ومرخص تحت رخصة [MIT License](LICENSE).
+Screen Mask is open source and released under the MIT License.
