@@ -17,19 +17,19 @@ android {
     applicationId = "com.aistudio.screenmask.overlay"
     minSdk = 24
     targetSdk = 36
-    versionCode = 1
-    versionName = "1.0"
+    versionCode = 332
+    versionName = "3.3.2"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
   signingConfigs {
     create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
+      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/release.keystore"
       storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD")
-      keyAlias = "upload"
-      keyPassword = System.getenv("KEY_PASSWORD")
+      storePassword = System.getenv("STORE_PASSWORD") ?: "12345678"
+      keyAlias = System.getenv("KEY_ALIAS") ?: "abcd"
+      keyPassword = System.getenv("KEY_PASSWORD") ?: "12345678"
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")

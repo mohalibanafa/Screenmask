@@ -25,7 +25,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.UUID
 
 class OverlayService : Service() {
@@ -37,7 +36,6 @@ class OverlayService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.Main + Job())
     private val activeMaskViews = mutableMapOf<String, Pair<OverlayMaskView, WindowManager.LayoutParams>>()
     private var floatingControlView: FloatingControlView? = null
-    private var floatingControlParams: WindowManager.LayoutParams? = null
 
     private var currentMaskList = listOf<MaskEntity>()
     private var isEditMode = true
@@ -63,12 +61,22 @@ class OverlayService : Service() {
                 stopSelf()
                 return START_NOT_STICKY
             }
+            ACTION_START_EDIT_MODE -> {
+                settingsRepository.setServiceActive(true)
+                settingsRepository.setEditMode(true)
+            }
             ACTION_TOGGLE_MODE -> {
                 val nextMode = !settingsRepository.isEditMode.value
                 settingsRepository.setEditMode(nextMode)
             }
             ACTION_ADD_MASK -> {
-                addNewDefaultMask()
+                val shape = intent.getStringExtra(EXTRA_SHAPE_TYPE) ?: MaskEntity.SHAPE_RECT
+                addNewMask(shape)
+            }
+            else -> {
+                // Default launch opens directly in Edit Mode
+                settingsRepository.setServiceActive(true)
+                settingsRepository.setEditMode(true)
             }
         }
         return START_STICKY
@@ -93,6 +101,12 @@ class OverlayService : Service() {
         serviceScope.launch {
             maskRepository.allMasks.collectLatest { masks ->
                 currentMaskList = masks
+                // Only select a mask if masks exist, or set to null when empty
+                if (masks.isEmpty()) {
+                    settingsRepository.setSelectedMaskId(null)
+                } else if (selectedMaskId == null || masks.none { it.id == selectedMaskId }) {
+                    settingsRepository.setSelectedMaskId(masks.firstOrNull()?.id)
+                }
                 refreshAllMaskViews()
             }
         }
@@ -157,6 +171,9 @@ class OverlayService : Service() {
                     onDelete = { maskId ->
                         serviceScope.launch(Dispatchers.IO) {
                             maskRepository.deleteMask(maskId)
+                            if (selectedMaskId == maskId) {
+                                settingsRepository.setSelectedMaskId(null)
+                            }
                         }
                     },
                     onSelect = { maskId ->
@@ -191,10 +208,15 @@ class OverlayService : Service() {
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-        } else {
-            // Block mode or locked mask: pass touch through completely!
+        } else if (mask.isTouchThrough) {
+            // Touch passes through completely in Lock/Display Mode when touch-through is enabled
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+        } else {
+            // Touch is blocked: touches on the mask will be intercepted and not passed to underlying apps
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
         }
@@ -218,6 +240,8 @@ class OverlayService : Service() {
     }
 
     private fun showFloatingController() {
+        val selectedMask = currentMaskList.find { it.id == selectedMaskId } ?: currentMaskList.firstOrNull()
+
         if (floatingControlView == null) {
             val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -235,42 +259,52 @@ class OverlayService : Service() {
                 context = this,
                 windowManager = windowManager,
                 layoutParams = params,
-                onAddMask = { addNewDefaultMask() },
-                onToggleEditMode = {
-                    settingsRepository.setEditMode(!isEditMode)
+                onAddMask = { shapeType -> addNewMask(shapeType) },
+                onExitEditMode = {
+                    settingsRepository.setEditMode(false)
                 },
-                onToggleLockAll = {
+                onUpdateMask = { updated ->
                     serviceScope.launch(Dispatchers.IO) {
-                        val allLocked = currentMaskList.all { it.isLocked }
-                        maskRepository.setAllLockState(!allLocked)
+                        maskRepository.updateMask(updated)
                     }
                 },
                 onDeleteSelected = {
-                    selectedMaskId?.let { id ->
+                    val idToDelete = selectedMaskId ?: currentMaskList.lastOrNull()?.id
+                    idToDelete?.let { id ->
                         serviceScope.launch(Dispatchers.IO) {
                             maskRepository.deleteMask(id)
-                            settingsRepository.setSelectedMaskId(null)
+                            if (selectedMaskId == id) {
+                                settingsRepository.setSelectedMaskId(null)
+                            }
                         }
                     }
                 },
-                onOpenApp = {
-                    val appIntent = Intent(this, MainActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                onDuplicateSelected = {
+                    selectedMask?.let { mask ->
+                        serviceScope.launch(Dispatchers.IO) {
+                            val duplicated = mask.copy(
+                                id = UUID.randomUUID().toString(),
+                                title = getString(R.string.mask_title_format, currentMaskList.size + 1),
+                                xRatio = (mask.xRatio + 0.05f).coerceIn(0f, 0.9f),
+                                yRatio = (mask.yRatio + 0.05f).coerceIn(0f, 0.9f),
+                                updatedAt = System.currentTimeMillis()
+                            )
+                            maskRepository.addMask(duplicated)
+                            settingsRepository.setSelectedMaskId(duplicated.id)
+                        }
                     }
-                    startActivity(appIntent)
                 }
             )
 
             try {
                 windowManager.addView(controlView, params)
                 floatingControlView = controlView
-                floatingControlParams = params
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
 
-        floatingControlView?.updateState(isEditMode, selectedMaskId != null)
+        floatingControlView?.updateState(selectedMask)
     }
 
     private fun hideFloatingController() {
@@ -284,20 +318,40 @@ class OverlayService : Service() {
         }
     }
 
-    private fun addNewDefaultMask() {
+    private fun addNewMask(shapeType: String = MaskEntity.SHAPE_RECT) {
         serviceScope.launch(Dispatchers.IO) {
             val maskCount = currentMaskList.size + 1
+            val isFreeQuad = shapeType == MaskEntity.SHAPE_FREE_QUAD
+            val p1x = if (isFreeQuad) 0.20f else 0f
+            val p1y = 0f
+            val p2x = 1.0f
+            val p2y = 0f
+            val p3x = if (isFreeQuad) 0.80f else 1.0f
+            val p3y = 1.0f
+            val p4x = 0f
+            val p4y = 1.0f
+
             val newMask = MaskEntity(
                 id = UUID.randomUUID().toString(),
-                title = "Mask $maskCount",
-                xRatio = 0.30f,
+                title = getString(R.string.mask_title_format, maskCount),
+                shapeType = shapeType,
+                xRatio = 0.25f,
                 yRatio = 0.35f,
-                widthRatio = 0.40f,
-                heightRatio = 0.20f,
+                widthRatio = 0.50f,
+                heightRatio = 0.22f,
                 colorArgb = 0xFF000000L,
                 alpha = 1.0f,
+                isTouchThrough = true,
                 isLocked = false,
-                isVisible = true
+                isVisible = true,
+                p1x = p1x,
+                p1y = p1y,
+                p2x = p2x,
+                p2y = p2y,
+                p3x = p3x,
+                p3y = p3y,
+                p4x = p4x,
+                p4y = p4y
             )
             maskRepository.addMask(newMask)
             settingsRepository.setSelectedMaskId(newMask.id)
@@ -320,10 +374,10 @@ class OverlayService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Screen Mask Service",
+                getString(R.string.app_name),
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Active Screen Overlay Mask Service"
+                description = getString(R.string.service_notification_title)
             }
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
@@ -331,9 +385,11 @@ class OverlayService : Service() {
     }
 
     private fun buildNotification(): Notification {
-        val openAppIntent = Intent(this, MainActivity::class.java)
-        val pendingOpenApp = PendingIntent.getActivity(
-            this, 0, openAppIntent, PendingIntent.FLAG_IMMUTABLE
+        val editIntent = Intent(this, OverlayService::class.java).apply {
+            action = ACTION_START_EDIT_MODE
+        }
+        val pendingEdit = PendingIntent.getService(
+            this, 0, editIntent, PendingIntent.FLAG_IMMUTABLE
         )
 
         val stopIntent = Intent(this, OverlayService::class.java).apply {
@@ -343,31 +399,18 @@ class OverlayService : Service() {
             this, 1, stopIntent, PendingIntent.FLAG_IMMUTABLE
         )
 
-        val toggleIntent = Intent(this, OverlayService::class.java).apply {
-            action = ACTION_TOGGLE_MODE
-        }
-        val pendingToggle = PendingIntent.getService(
-            this, 2, toggleIntent, PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val addIntent = Intent(this, OverlayService::class.java).apply {
-            action = ACTION_ADD_MASK
-        }
-        val pendingAdd = PendingIntent.getService(
-            this, 3, addIntent, PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val modeText = if (isEditMode) "وضع التحرير (Edit Mode)" else "وضع الحجب (Block Mode)"
+        val modeText = if (isEditMode) getString(R.string.service_mode_edit) else getString(R.string.service_mode_locked)
+        val notifTitle = getString(R.string.service_notification_title)
+        val notifContent = getString(R.string.service_notification_text, modeText, currentMaskList.size)
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Screen Mask Active")
-            .setContentText("الحالة الحالية: $modeText | Mask Count: ${currentMaskList.size}")
-            .setSmallIcon(android.R.drawable.ic_menu_compass)
-            .setContentIntent(pendingOpenApp)
+            .setContentTitle(notifTitle)
+            .setContentText(notifContent)
+            .setSmallIcon(R.drawable.ic_shape_square)
+            .setContentIntent(pendingEdit)
             .setOngoing(true)
-            .addAction(android.R.drawable.ic_input_add, "+ Mask", pendingAdd)
-            .addAction(android.R.drawable.ic_menu_edit, if (isEditMode) "Block" else "Edit", pendingToggle)
-            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", pendingStop)
+            .addAction(android.R.drawable.ic_menu_edit, getString(R.string.service_action_edit), pendingEdit)
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, getString(R.string.service_action_stop), pendingStop)
             .build()
     }
 
@@ -395,11 +438,14 @@ class OverlayService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     companion object {
-        const val CHANNEL_ID = "screen_mask_service_channel"
+        const val CHANNEL_ID = "screen_mask_floating_channel"
         const val NOTIFICATION_ID = 1001
 
         const val ACTION_STOP_SERVICE = "com.example.ACTION_STOP_SERVICE"
+        const val ACTION_START_EDIT_MODE = "com.example.ACTION_START_EDIT_MODE"
         const val ACTION_TOGGLE_MODE = "com.example.ACTION_TOGGLE_MODE"
         const val ACTION_ADD_MASK = "com.example.ACTION_ADD_MASK"
+
+        const val EXTRA_SHAPE_TYPE = "extra_shape_type"
     }
 }

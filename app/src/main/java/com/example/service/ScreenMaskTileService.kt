@@ -6,6 +6,7 @@ import android.provider.Settings
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import androidx.annotation.RequiresApi
+import com.example.R
 import com.example.data.AppSettingsRepository
 
 @RequiresApi(Build.VERSION_CODES.N)
@@ -53,7 +54,8 @@ class ScreenMaskTileService : TileService() {
         val isActive = repository.isServiceActive.value
 
         tile.state = if (isActive) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
-        tile.label = "Screen Mask"
+        tile.label = getString(R.string.tile_label)
         tile.updateTile()
     }
 }
+

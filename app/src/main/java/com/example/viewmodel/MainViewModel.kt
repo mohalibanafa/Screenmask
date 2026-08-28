@@ -7,6 +7,7 @@ import android.provider.Settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.example.R
 import com.example.data.AppDatabase
 import com.example.data.AppSettingsRepository
 import com.example.data.MaskEntity
@@ -21,6 +22,7 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 
 class MainViewModel(
+    private val context: Context,
     private val maskRepository: MaskRepository,
     private val settingsRepository: AppSettingsRepository
 ) : ViewModel() {
@@ -72,13 +74,15 @@ class MainViewModel(
             val count = masks.value.size + 1
             val newMask = MaskEntity(
                 id = UUID.randomUUID().toString(),
-                title = "مربع $count",
+                title = context.getString(R.string.mask_title_format, count),
+                shapeType = MaskEntity.SHAPE_RECT,
                 xRatio = 0.30f,
                 yRatio = 0.35f,
                 widthRatio = 0.40f,
                 heightRatio = 0.20f,
                 colorArgb = 0xFF000000L,
                 alpha = 1.0f,
+                isTouchThrough = true,
                 isLocked = false,
                 isVisible = true
             )
@@ -136,10 +140,12 @@ class MainViewModel(
     class Factory(private val context: Context) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            val db = AppDatabase.getInstance(context)
+            val appContext = context.applicationContext
+            val db = AppDatabase.getInstance(appContext)
             val maskRepo = MaskRepository.getInstance(db)
-            val settingsRepo = AppSettingsRepository.getInstance(context)
-            return MainViewModel(maskRepo, settingsRepo) as T
+            val settingsRepo = AppSettingsRepository.getInstance(appContext)
+            return MainViewModel(appContext, maskRepo, settingsRepo) as T
         }
     }
 }
+

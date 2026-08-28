@@ -1,51 +1,54 @@
 package com.example
 
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import com.example.service.OverlayService
 import com.example.ui.ScreenMaskApp
-import com.example.viewmodel.MainViewModel
 
 class MainActivity : ComponentActivity() {
 
-    private val viewModel: MainViewModel by viewModels {
-        MainViewModel.Factory(applicationContext)
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Check if overlay permission is already granted
+        if (hasOverlayPermission()) {
+            launchFloatingOverlayAndFinish()
+            return
+        }
+
         enableEdgeToEdge()
 
         setContent {
             MaterialTheme(
-                colorScheme = lightColorScheme(
-                    primary = Color(0xFF6750A4),
-                    onPrimary = Color.White,
-                    primaryContainer = Color(0xFFEADDFF),
-                    onPrimaryContainer = Color(0xFF21005D),
-                    secondary = Color(0xFFF27D26),
-                    onSecondary = Color.White,
-                    surface = Color(0xFFFDF8F6),
-                    onSurface = Color(0xFF1D1B20),
-                    surfaceContainer = Color(0xFFF3EDF7),
-                    surfaceContainerLow = Color(0xFFF7F2FA),
-                    surfaceContainerHigh = Color(0xFFEADDFF),
-                    surfaceContainerHighest = Color(0xFFD0BCFF)
+                colorScheme = darkColorScheme(
+                    primary = Color(0xFF38BDF8),
+                    onPrimary = Color.Black,
+                    primaryContainer = Color(0xFF0284C7),
+                    onPrimaryContainer = Color.White,
+                    surface = Color(0xFF0F172A),
+                    onSurface = Color.White
                 )
             ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.surface
+                    color = Color(0xFF0F172A)
                 ) {
-                    ScreenMaskApp(viewModel = viewModel)
+                    ScreenMaskApp(
+                        onGrantPermission = {
+                            // User opened settings to grant permission
+                        }
+                    )
                 }
             }
         }
@@ -53,6 +56,31 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        viewModel.checkOverlayPermission(this)
+        if (hasOverlayPermission()) {
+            launchFloatingOverlayAndFinish()
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (hasOverlayPermission()) {
+            launchFloatingOverlayAndFinish()
+        }
+    }
+
+    private fun hasOverlayPermission(): Boolean {
+        return Settings.canDrawOverlays(this)
+    }
+
+    private fun launchFloatingOverlayAndFinish() {
+        val serviceIntent = Intent(this, OverlayService::class.java).apply {
+            action = OverlayService.ACTION_START_EDIT_MODE
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent)
+        } else {
+            startService(serviceIntent)
+        }
+        finish()
     }
 }

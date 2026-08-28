@@ -1,79 +1,87 @@
-# Screen Mask | قناع الشاشة 🛡️📱
+# قناع الشاشة | Screen Mask `v3.3.2` 🛡️📱
 
-Lightweight, open-source, non-root Android application designed to cover damaged, flickering, or light-bleeding screen areas with independent pure black screen overlay masks (`TYPE_APPLICATION_OVERLAY`).
-
----
-
-## 🌟 Key Features
-
-- **No Root Required**: Built purely using Android standard `WindowManager` and `TYPE_APPLICATION_OVERLAY`.
-- **Pure Black Masks (RGB 0,0,0)**: Default 100% opaque black rectangular masks that cover dead pixels, screen cracks, or bright spots.
-- **Unlimited Independent Masks**: Create, drag, resize, lock, and hide multiple masks simultaneously.
-- **Pass-Through Touch (Block Mode)**: In **Block Mode**, borders and control handles disappear completely. Masks use `FLAG_NOT_TOUCHABLE` & `FLAG_NOT_FOCUSABLE`, allowing all touch inputs to pass through directly to underlying applications.
-- **Interactive Edit Mode**: Position masks easily with corner resize handles and drag controls.
-- **Floating Controller Widget**: Draggable quick control panel for toggling modes, adding masks, or deleting selected masks outside the app.
-- **Persistent Room Database**: Mask coordinates are stored using screen ratios (0.0 .. 1.0) to preserve exact positions across device reboots, screen orientation changes, and status bar/navigation bar inset shifts.
-- **Foreground Service & QS Tile**: Runs reliably in the background with a persistent control notification and a Quick Settings Tile.
+تطبيق أندرويد متطور، خفيف، ومفتوح المصدر ولا يتطلب صلاحيات الروت (No Root)، مصمم لتغطية وتعتيم المناطق المتضررة من الشاشة مثل البكسلات الميتة (Dead Pixels)، الشروخ والكسور، تسريب الإضاءة، أو وميض وحرق الشاشة، من خلال أقنعة ومجسمات عائمة مستقلة مع تحكم مرن وكامل.
 
 ---
 
-## 🛠️ Architecture & Project Structure
+## 🌟 أبرز الوظائف والمميزات (Features)
 
-- **Language**: Kotlin 100%
-- **UI Framework**: Jetpack Compose + Custom Canvas Overlay Views
-- **Persistence**: Room Database (`MaskEntity`, `MaskDao`, `AppDatabase`) + SharedPreferences (`AppSettingsRepository`)
-- **Service**: `OverlayService` (Foreground Service managing WindowManager overlay layers)
-- **Quick Settings Tile**: `ScreenMaskTileService` (`TileService`)
+- **بدون روت (No Root Required)**: يعمل بشكل رسمي وآمن تماماً عبر واجهات أندرويد القياسية لنظام النوافذ العائمة (`WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY`).
+- **أشكال هندسية متعددة وسريعة**:
+  - ⬛ **مستطيل (Rectangle)**: لتغطية الخطوط أو أطراف الشاشة أو حواف التطبيقات.
+  - 🔵 **دائرة (Circle)**: لتغطية النقاط المحروقة أو البقع الدائرية.
+  - ▱ **شكل حر متوازي الأضلاع (Free Quad / Parallelogram)**: مع 4 مقابض مستقلة للأركان لتغطية الشروخ والكسور المائلة بدقة متناهية.
+- **وضع اللمس المباشر (Touch-Through Mode)**:
+  - **عند التفعيل**: يسمح للمسات والنقرات بالمرور من خلال المجسم والتفاعل مع التطبيقات والشاشة تحته بسلاسة تامة.
+  - **عند التعطيل**: يحجب اللمس تماماً ويعترض أي نقرات عشوائية لحماية المناطق الحساسة من اللمس الخاطئ.
+- **وضع المعاينة المصغر (Preview Eye Mode)**: إمكانية تصغير شريط التحكم بنقرة واحدة إلى فقاعة عائمة خفيفة بأيقونة المعاينة (👁️) لمشاهدة شكل الشاشة في الوقت الفعلي أثناء استخدام الهاتف بدون عوائق.
+- **شريط تحكم عائم ذكي (Floating Control Toolbar)**:
+  - إضافة الأشكال وتكرارها وحذفها مباشرة خارج التطبيق.
+  - منتقي ألوان متقدم يدعم لوحة الألوان المخصصة (Hex) وشريط الشفافية (Alpha).
+  - سلايدرات دقيقة لضبط العرض والارتفاع والموضع الأفقي والعمودي.
+- **حفظ تلقائي ودائم في قاعدة بيانات Room**: تُحفظ أبعاد ومواقع المجسمات كنسب مئوية (Screen Ratios) لضمان ثبات موقعها حتى بعد إعادة تشغيل الهاتف، تغيير اتجاه الشاشة (أفقي/عمودي)، أو اختلاف أشرطة النظام.
+- **أداء خفيف وخدمة مستمرة**: يعمل عبر خدمة أمامية موثوقة (Foreground Service) مع إشعار دائم وبلاطة إعدادات سريعة (Quick Settings Tile).
+
+---
+
+## 📱 English Overview
+
+**Screen Mask** is a high-performance Android overlay utility that places customizable shapes over damaged, burned-in, flickering, or cracked screen regions.
+
+- **Dynamic Shapes**: Rectangles, Circles, and Free-Corner Parallelograms with interactive handles.
+- **Touch-Through & Block Support**: Full control over whether touch inputs interact with underlying apps or get shielded.
+- **Minimized Preview Bubble**: Collapse the toolbar into an unobtrusive floating eye icon preview badge.
+- **Precision Customization**: Full ARGB Color Picker, Opacity slider, X/Y placement sliders, and shape duplication.
+- **Zero Privacy Intrusions**: Does not capture screens, read accessibility events, or log private data.
+
+---
+
+## 🛠️ بنية المشروع والتقنيات المستخدمة (Architecture)
+
+- **لغة البرمجة**: Kotlin 100%
+- **واجهة المستخدم**: Jetpack Compose (داخل التطبيق) + Custom Canvas Views (للطبقات العائمة)
+- **قاعدة البيانات**: Room Database (`MaskEntity`, `MaskDao`, `AppDatabase`)
+- **الخدمات الخلفية**: `OverlayService` (Foreground Service) + `ScreenMaskTileService` (Quick Settings)
 
 ```
 app/src/main/java/com/example/
-├── MainActivity.kt                  # Main entry activity
+├── MainActivity.kt                  # واجهة التطبيق الرئيسية (Compose)
 ├── data/
-│   ├── MaskEntity.kt                # Room entity storing ratios, color, lock state
-│   ├── MaskDao.kt                   # Database access object
-│   ├── AppDatabase.kt               # Room database instance
-│   ├── MaskRepository.kt            # Repository pattern abstraction
-│   └── AppSettingsRepository.kt     # Preferences management
+│   ├── MaskEntity.kt                # كائن بيانات الشكل وموقعه وخصائصه
+│   ├── MaskDao.kt                   # عمليات قاعدة البيانات
+│   ├── AppDatabase.kt               # قاعدة بيانات Room
+│   ├── MaskRepository.kt            # مستودع إدارة البيانات
+│   └── AppSettingsRepository.kt     # إعدادات التطبيق والتفضيلات
 ├── service/
-│   ├── OverlayService.kt            # Foreground service managing WindowManager
-│   ├── OverlayMaskView.kt           # Custom view for interactive masks
-│   ├── FloatingControlView.kt       # Floating control bar widget
-│   └── ScreenMaskTileService.kt     # Quick Settings tile service
+│   ├── OverlayService.kt            # الخدمة الأمامية لإدارة النوافذ العائمة
+│   ├── OverlayMaskView.kt           # الرسم التفاعلي للأشكال ومقابض التحكم
+│   ├── FloatingControlView.kt       # شريط الأدوات ولوحة الإعدادات العائمة
+│   ├── AdvancedColorPickerView.kt   # منتقي الألوان والشفافية المتقدم
+│   └── ScreenMaskTileService.kt     # خدمة الإعدادات السريعة (Tile)
 ├── receiver/
-│   └── BootReceiver.kt              # Restores service on boot
-├── ui/
-│   └── ScreenMaskApp.kt             # Jetpack Compose management interface
-└── viewmodel/
-    └── MainViewModel.kt             # State management
+│   └── BootReceiver.kt              # استعادة الأشكال تلقائياً عند إقلاع الجهاز
+└── ui/
+    └── ScreenMaskApp.kt             # واجهة إدارة الأشكال والإعدادات
 ```
 
 ---
 
-## 🚀 Building & Installation
+## 🚀 البناء والتثبيت (Build)
 
-### Prerequisites
-- **Android Studio**: Ladybug / Jellyfish or newer
-- **JDK**: JDK 17
-- **Gradle**: 8.x+ (configured via project Gradle)
-- **Minimum SDK**: API 24 (Android 7.0+, full overlay support on API 26+)
-- **Target SDK**: API 36 (Android 15+)
-
-### Build Commands
-To build the debug APK:
 ```bash
 gradle :app:assembleDebug
 ```
-The resulting APK will be generated at: `app/build/outputs/apk/debug/app-debug.apk`
+ملف الـ APK الناتج: `app/build/outputs/apk/debug/app-debug.apk`
 
 ---
 
-## 🔒 Permissions & Safety
+## 🔒 الصلاحيات والأمان (Permissions)
 
-- **Display Over Other Apps (`SYSTEM_ALERT_WINDOW`)**: Required to draw floating mask layers over the Android screen. Requested at runtime.
-- **Foreground Service (`FOREGROUND_SERVICE`)**: Ensures masks stay active reliably without being killed by Android memory management.
-- **No Accessibility / No Camera / No MediaProjection**: The app does **NOT** read screen content, record video, or intercept user keystrokes.
+1. **الظهور فوق التطبيقات الأخرى (`SYSTEM_ALERT_WINDOW`)**: لعرض وتثبيت الأقنعة العائمة على الشاشة.
+2. **الخدمة الأمامية (`FOREGROUND_SERVICE`)**: لضمان استمرار عمل الأقنعة دون إغلاقها من قِبل موفر الطاقة في النظام.
+3. **تشغيل عند بدء التشغيل (`RECEIVE_BOOT_COMPLETED`)**: لتفعيل الأقنعة تلقائياً بعد إعادة التشغيل إذا تم تفعيل الخيار.
 
 ---
 
-## 📄 License
-This project is open source and released under the [MIT License](LICENSE).
+## 📄 الترخيص (License)
+هذا المشروع مفتوح المصدر ومرخص تحت رخصة [MIT License](LICENSE).

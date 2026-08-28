@@ -1,3 +1,73 @@
 <resources>
     <string name="app_name">Screen Mask</string>
+    <string name="app_subtitle_active">Floating Overlay Active • %1$d shape(s)</string>
+    <string name="app_subtitle_inactive">Cover cracks, dead pixels, and screen flaws easily</string>
+    <string name="status_active">Active</string>
+    <string name="status_inactive">Inactive</string>
+
+    <string name="permission_screen_title">Enable Floating Overlay</string>
+    <string name="permission_screen_subtitle">Display Over Other Apps Permission</string>
+    <string name="permission_screen_desc">To draw shapes and floating masks directly over your apps and screen, please allow the \'Display over other apps\' permission.</string>
+    <string name="permission_step_1">1. Tap \'Enable Permission\' below</string>
+    <string name="permission_step_2">2. Find \'Screen Mask\' in the settings list and turn it ON</string>
+    <string name="permission_step_3">3. The app will immediately launch in Floating Edit Mode!</string>
+    <string name="btn_grant_permission">Enable Permission</string>
+    <string name="permission_auto_launch_hint">Once granted, the app runs completely as a floating overlay without opening any background screen.</string>
+
+    <string name="floating_btn_mode_desc">Toggle Edit / Lock Mode</string>
+    <string name="floating_btn_add_rect">Add Rectangle</string>
+    <string name="floating_btn_add_circle">Add Circle</string>
+    <string name="floating_btn_add_parallelogram">Add Parallelogram (Free Corners)</string>
+    <string name="floating_btn_settings_desc">Sliders &amp; Appearance Panel</string>
+    <string name="floating_btn_touch_desc">Toggle Touch-through</string>
+    <string name="floating_btn_delete_desc">Delete Selected Shape</string>
+    <string name="floating_btn_stop_desc">Stop Floating Shapes</string>
+    <string name="floating_btn_minimize_desc">Minimize Control Bar</string>
+    <string name="floating_btn_expand_desc">Expand Controls</string>
+
+    <string name="panel_title_edit">Shape Customizer</string>
+    <string name="panel_shape_type">Shape Type:</string>
+    <string name="shape_rect">Rectangle</string>
+    <string name="shape_rounded">Rounded</string>
+    <string name="shape_circle">Circle</string>
+    <string name="shape_parallelogram">Free Quad / Parallelogram</string>
+
+    <string name="slider_width">Width</string>
+    <string name="slider_height">Height / Thickness</string>
+    <string name="slider_corner_radius">Corner Radius</string>
+    <string name="slider_pos_x">Horizontal Position (X)</string>
+    <string name="slider_pos_y">Vertical Position (Y)</string>
+
+    <string name="slider_opacity">Opacity / Transparency</string>
+    <string name="color_section_title">Color:</string>
+    <string name="color_picker_title">Color &amp; Transparency</string>
+    <string name="color_pure_black">Black</string>
+    <string name="color_dark_gray">Dark Gray</string>
+    <string name="color_white">White</string>
+    <string name="color_red">Red</string>
+    <string name="color_amber">Amber</string>
+    <string name="color_green">Green</string>
+    <string name="color_blue">Blue</string>
+    <string name="color_purple">Purple</string>
+
+    <string name="touch_through_title">Touch-Through Mode (Pass-Through)</string>
+    <string name="touch_through_explanation">💡 When enabled, the shape becomes semi-transparent so you can tap, scroll, and interact with the screen and apps directly through it.</string>
+    <string name="touch_through_on">Enabled (Touch Passes Through)</string>
+    <string name="touch_through_off">Disabled (Touch Blocked)</string>
+
+    <string name="btn_duplicate_shape">Duplicate</string>
+    <string name="btn_delete_shape">Delete</string>
+    <string name="btn_lock_done">🔒 Done &amp; Lock</string>
+    <string name="btn_stop_service">Stop Overlays</string>
+
+    <string name="service_notification_title">Floating Screen Masks</string>
+    <string name="service_notification_text">Status: %1$s • %2$d shape(s) on screen</string>
+    <string name="service_mode_edit">Edit Mode</string>
+    <string name="service_mode_locked">Locked Mode</string>
+    <string name="service_action_edit">✏️ Edit Mode</string>
+    <string name="service_action_stop">⏹️ Stop Overlays</string>
+
+    <string name="minimized_preview_label">Preview</string>
+    <string name="mask_title_format">Shape %1$d</string>
+    <string name="tile_label">Screen Mask</string>
 </resources>
