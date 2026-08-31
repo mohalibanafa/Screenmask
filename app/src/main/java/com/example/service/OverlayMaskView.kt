@@ -36,20 +36,6 @@ class OverlayMaskView(
         isAntiAlias = true
     }
 
-    private val borderPaint = Paint().apply {
-        style = Paint.Style.STROKE
-        strokeWidth = 3f * context.resources.displayMetrics.density
-        color = Color.parseColor("#38BDF8") // Cyan accent
-        isAntiAlias = true
-    }
-
-    private val selectedBorderPaint = Paint().apply {
-        style = Paint.Style.STROKE
-        strokeWidth = 5f * context.resources.displayMetrics.density
-        color = Color.parseColor("#F43F5E") // Rose red selected highlight
-        isAntiAlias = true
-    }
-
     private val handlePaint = Paint().apply {
         style = Paint.Style.FILL
         color = Color.parseColor("#38BDF8")
@@ -58,13 +44,13 @@ class OverlayMaskView(
 
     private val handleBorderPaint = Paint().apply {
         style = Paint.Style.STROKE
-        strokeWidth = 2.5f * context.resources.displayMetrics.density
+        strokeWidth = 1.5f * context.resources.displayMetrics.density
         color = Color.WHITE
         isAntiAlias = true
     }
 
-    private val handleRadius = 14f * context.resources.displayMetrics.density
-    private val editPaddingPx get() = if (isEditMode && !mask.isLocked) 32f * context.resources.displayMetrics.density else 0f
+    private val handleRadius = 6f * context.resources.displayMetrics.density
+    private val editPaddingPx get() = if (isEditMode && !mask.isLocked) 16f * context.resources.displayMetrics.density else 0f
     private val quadPath = Path()
 
     // Touch dragging / resizing state
@@ -172,24 +158,15 @@ class OverlayMaskView(
             }
         }
 
-        // 2. In Edit Mode (if not locked), draw edit outline and corner handles
-        if (isEditMode && !mask.isLocked) {
-            val paintToUse = if (isMaskSelected) selectedBorderPaint else borderPaint
-
-            when (mask.shapeType) {
-                MaskEntity.SHAPE_CIRCLE -> {
-                    canvas.drawOval(shapeRect, paintToUse)
-                    drawCornerHandles(canvas, layout.q1.x, layout.q1.y, layout.q2.x, layout.q2.y, layout.q3.x, layout.q3.y, layout.q4.x, layout.q4.y)
-                }
-                MaskEntity.SHAPE_ROUNDED -> {
-                    canvas.drawRoundRect(shapeRect, cornerRadiusPx, cornerRadiusPx, paintToUse)
-                    drawCornerHandles(canvas, layout.q1.x, layout.q1.y, layout.q2.x, layout.q2.y, layout.q3.x, layout.q3.y, layout.q4.x, layout.q4.y)
-                }
-                else -> {
-                    canvas.drawPath(quadPath, paintToUse)
-                    drawCornerHandles(canvas, layout.q1.x, layout.q1.y, layout.q2.x, layout.q2.y, layout.q3.x, layout.q3.y, layout.q4.x, layout.q4.y)
-                }
-            }
+        // 2. In Edit Mode (if not locked), draw small corner handles only (no obscuring border)
+        if (isEditMode && !mask.isLocked && isMaskSelected) {
+            drawCornerHandles(
+                canvas,
+                layout.q1.x, layout.q1.y,
+                layout.q2.x, layout.q2.y,
+                layout.q3.x, layout.q3.y,
+                layout.q4.x, layout.q4.y
+            )
         }
     }
 

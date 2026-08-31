@@ -77,6 +77,27 @@
     <string name="service_action_edit">Edit Mode</string>
     <string name="service_action_stop">Stop Overlays</string>
 
+    <string name="floating_btn_list_desc">Masks and Lines List</string>
+    <string name="masks_list_title">All Masks &amp; Lines</string>
+    <string name="masks_list_empty">No masks added yet. Tap shapes above to add.</string>
+    <string name="btn_add_h_line">+ H-Line (1px)</string>
+    <string name="btn_add_v_line">+ V-Line (1px)</string>
+    <string name="dpad_title">Pixel-Precision Movement (D-Pad)</string>
+    <string name="dpad_up">Up</string>
+    <string name="dpad_down">Down</string>
+    <string name="dpad_left">Left</string>
+    <string name="dpad_right">Right</string>
+    <string name="precision_controls_title">Fine Dimensions &amp; Position</string>
+    <string name="btn_full_width">Full W</string>
+    <string name="btn_full_height">Full H</string>
+    <string name="btn_1px">1px</string>
+    <string name="btn_2px">2px</string>
+    <string name="btn_5px">5px</string>
+    <string name="mask_item_h_line">Horizontal Line</string>
+    <string name="mask_item_v_line">Vertical Line</string>
+    <string name="mask_item_locked">Locked</string>
+    <string name="mask_item_hidden">Hidden</string>
+
     <string name="minimized_preview_label">Preview (Tap to edit)</string>
     <string name="mask_title_format">Shape %1$d</string>
     <string name="tile_label">Screen Mask</string>

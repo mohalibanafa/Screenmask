@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.example.service.OverlayService
@@ -18,16 +21,18 @@ import com.example.ui.ScreenMaskApp
 
 class MainActivity : ComponentActivity() {
 
+    private var hasPermissionState by mutableStateOf(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Check if overlay permission is already granted
-        if (hasOverlayPermission()) {
-            launchFloatingOverlayAndFinish()
-            return
-        }
-
         enableEdgeToEdge()
+
+        val permitted = hasOverlayPermission()
+        hasPermissionState = permitted
+
+        if (permitted) {
+            startFloatingOverlayService()
+        }
 
         setContent {
             MaterialTheme(
@@ -36,15 +41,16 @@ class MainActivity : ComponentActivity() {
                     onPrimary = Color.Black,
                     primaryContainer = Color(0xFF0284C7),
                     onPrimaryContainer = Color.White,
-                    surface = Color(0xFF0F172A),
-                    onSurface = Color.White
+                    surface = if (hasPermissionState) Color.White else Color(0xFF0F172A),
+                    onSurface = if (hasPermissionState) Color.Black else Color.White
                 )
             ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = Color(0xFF0F172A)
+                    color = if (hasPermissionState) Color.White else Color(0xFF0F172A)
                 ) {
                     ScreenMaskApp(
+                        hasPermission = hasPermissionState,
                         onGrantPermission = {
                             // User opened settings to grant permission
                         }
@@ -56,15 +62,19 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (hasOverlayPermission()) {
-            launchFloatingOverlayAndFinish()
+        val permitted = hasOverlayPermission()
+        hasPermissionState = permitted
+        if (permitted) {
+            startFloatingOverlayService()
         }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (hasOverlayPermission()) {
-            launchFloatingOverlayAndFinish()
+        val permitted = hasOverlayPermission()
+        hasPermissionState = permitted
+        if (permitted) {
+            startFloatingOverlayService()
         }
     }
 
@@ -72,7 +82,7 @@ class MainActivity : ComponentActivity() {
         return Settings.canDrawOverlays(this)
     }
 
-    private fun launchFloatingOverlayAndFinish() {
+    private fun startFloatingOverlayService() {
         val serviceIntent = Intent(this, OverlayService::class.java).apply {
             action = OverlayService.ACTION_START_EDIT_MODE
         }
@@ -81,6 +91,5 @@ class MainActivity : ComponentActivity() {
         } else {
             startService(serviceIntent)
         }
-        finish()
     }
 }

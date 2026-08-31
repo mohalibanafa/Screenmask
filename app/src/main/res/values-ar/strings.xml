@@ -78,6 +78,27 @@
     <string name="service_action_edit">وضع التعديل</string>
     <string name="service_action_stop">إيقاف الأقنعة</string>
 
+    <string name="floating_btn_list_desc">قائمة الأقنعة والخطوط</string>
+    <string name="masks_list_title">جميع الأقنعة والخطوط</string>
+    <string name="masks_list_empty">لا توجد أقنعة مضافة بعد. اضغط على الأشكال أعلاه للإضافة.</string>
+    <string name="btn_add_h_line">+ خط أفقي (1px)</string>
+    <string name="btn_add_v_line">+ خط رأسي (1px)</string>
+    <string name="dpad_title">التحكم الدقيق بالبكسل (D-Pad)</string>
+    <string name="dpad_up">أعلى</string>
+    <string name="dpad_down">أسفل</string>
+    <string name="dpad_left">يسار</string>
+    <string name="dpad_right">يمين</string>
+    <string name="precision_controls_title">الضبط الدقيق للأبعاد والموضع</string>
+    <string name="btn_full_width">كامل العرض</string>
+    <string name="btn_full_height">كامل الطول</string>
+    <string name="btn_1px">1px</string>
+    <string name="btn_2px">2px</string>
+    <string name="btn_5px">5px</string>
+    <string name="mask_item_h_line">خط أفقي</string>
+    <string name="mask_item_v_line">خط رأسي</string>
+    <string name="mask_item_locked">مثبت</string>
+    <string name="mask_item_hidden">مخفي</string>
+
     <string name="minimized_preview_label">معاينة (اضغط للتعديل)</string>
     <string name="mask_title_format">شكل %1$d</string>
     <string name="tile_label">قناع الشاشة</string>

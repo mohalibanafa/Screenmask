@@ -277,7 +277,7 @@ class OverlayService : Service() {
             }
         }
 
-        val extraPadding = if (inActualEditMode) 32f * resources.displayMetrics.density else 0f
+        val extraPadding = if (inActualEditMode) 16f * resources.displayMetrics.density else 0f
         val layout = PhysicalPixelTransformer.calculateMaskLayout(mask, screenWidth, screenHeight, rotation, extraPadding)
 
         return WindowManager.LayoutParams(
@@ -330,29 +330,26 @@ class OverlayService : Service() {
                 windowManager = windowManager,
                 layoutParams = params,
                 onAddMask = { shapeType -> addNewMask(shapeType) },
-                onDuplicateSelected = {
-                    selectedMask?.let { mask ->
-                        serviceScope.launch(Dispatchers.IO) {
-                            val duplicated = mask.copy(
-                                id = UUID.randomUUID().toString(),
-                                title = getString(R.string.mask_title_format, currentMaskList.size + 1),
-                                xRatio = (mask.xRatio + 0.05f).coerceIn(0f, 0.9f),
-                                yRatio = (mask.yRatio + 0.05f).coerceIn(0f, 0.9f),
-                                updatedAt = System.currentTimeMillis()
-                            )
-                            maskRepository.addMask(duplicated)
-                            settingsRepository.setSelectedMaskId(duplicated.id)
-                        }
+                onAddCustomLine = { isVertical -> addNewLine(isVertical) },
+                onSelectMask = { maskId -> settingsRepository.setSelectedMaskId(maskId) },
+                onDuplicateMask = { mask ->
+                    serviceScope.launch(Dispatchers.IO) {
+                        val duplicated = mask.copy(
+                            id = UUID.randomUUID().toString(),
+                            title = getString(R.string.mask_title_format, currentMaskList.size + 1),
+                            xRatio = (mask.xRatio + 0.03f).coerceIn(0f, 0.9f),
+                            yRatio = (mask.yRatio + 0.03f).coerceIn(0f, 0.9f),
+                            updatedAt = System.currentTimeMillis()
+                        )
+                        maskRepository.addMask(duplicated)
+                        settingsRepository.setSelectedMaskId(duplicated.id)
                     }
                 },
-                onDeleteSelected = {
-                    val idToDelete = selectedMaskId ?: currentMaskList.lastOrNull()?.id
-                    idToDelete?.let { id ->
-                        serviceScope.launch(Dispatchers.IO) {
-                            maskRepository.deleteMask(id)
-                            if (selectedMaskId == id) {
-                                settingsRepository.setSelectedMaskId(null)
-                            }
+                onDeleteMask = { idToDelete ->
+                    serviceScope.launch(Dispatchers.IO) {
+                        maskRepository.deleteMask(idToDelete)
+                        if (selectedMaskId == idToDelete) {
+                            settingsRepository.setSelectedMaskId(null)
                         }
                     }
                 },
@@ -389,7 +386,7 @@ class OverlayService : Service() {
             floatingControlView?.showEditMode()
         }
 
-        floatingControlView?.updateState(selectedMask)
+        floatingControlView?.updateState(selectedMask, currentMaskList)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -544,6 +541,51 @@ class OverlayService : Service() {
                 p4x = p4x,
                 p4y = p4y
             )
+            maskRepository.addMask(newMask)
+            settingsRepository.setSelectedMaskId(newMask.id)
+        }
+    }
+
+    private fun addNewLine(isVertical: Boolean) {
+        serviceScope.launch(Dispatchers.IO) {
+            val maskCount = currentMaskList.size + 1
+            val title = if (isVertical) {
+                "${getString(R.string.mask_item_v_line)} $maskCount"
+            } else {
+                "${getString(R.string.mask_item_h_line)} $maskCount"
+            }
+
+            val newMask = if (isVertical) {
+                MaskEntity(
+                    id = UUID.randomUUID().toString(),
+                    title = title,
+                    shapeType = MaskEntity.SHAPE_RECT,
+                    xRatio = 0.50f,
+                    yRatio = 0.0f,
+                    widthRatio = 0.002f, // 1-2px vertical hairline
+                    heightRatio = 1.0f, // Full screen height
+                    colorArgb = 0xFF000000L,
+                    alpha = 1.0f,
+                    isTouchThrough = true,
+                    isLocked = false,
+                    isVisible = true
+                )
+            } else {
+                MaskEntity(
+                    id = UUID.randomUUID().toString(),
+                    title = title,
+                    shapeType = MaskEntity.SHAPE_RECT,
+                    xRatio = 0.0f,
+                    yRatio = 0.50f,
+                    widthRatio = 1.0f, // Full screen width
+                    heightRatio = 0.002f, // 1-2px horizontal hairline
+                    colorArgb = 0xFF000000L,
+                    alpha = 1.0f,
+                    isTouchThrough = true,
+                    isLocked = false,
+                    isVisible = true
+                )
+            }
             maskRepository.addMask(newMask)
             settingsRepository.setSelectedMaskId(newMask.id)
         }
