@@ -219,7 +219,7 @@ class OverlayMaskView(
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (!isEditMode || mask.isLocked) {
-            // When touch-through is disabled, consume touch events to block interactions with underlying apps/screen
+            // When touch-through is disabled in preview/display mode, consume touch events to protect the screen area
             return !mask.isTouchThrough
         }
 

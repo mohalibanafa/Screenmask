@@ -29,12 +29,13 @@ class FloatingControlView(
     private val windowManager: WindowManager,
     private val layoutParams: WindowManager.LayoutParams,
     private val onAddMask: (shapeType: String) -> Unit,
-    private val onExitEditMode: () -> Unit,
-    private val onUpdateMask: (MaskEntity) -> Unit,
-    private val onDeleteSelected: () -> Unit,
     private val onDuplicateSelected: () -> Unit,
-    private val onExitApp: () -> Unit,
-    private val onTogglePreviewMode: (Boolean) -> Unit = {}
+    private val onDeleteSelected: () -> Unit,
+    private val onUpdateMask: (MaskEntity) -> Unit,
+    private val onEnterPreviewMode: () -> Unit,
+    private val onEnterDisplayMode: () -> Unit,
+    private val onExitPreviewMode: () -> Unit,
+    private val onExitApp: () -> Unit
 ) : FrameLayout(context) {
 
     fun getLayoutParamsTyped(): WindowManager.LayoutParams = layoutParams
@@ -62,7 +63,7 @@ class FloatingControlView(
         gravity = Gravity.CENTER_VERTICAL
     }
 
-    // Tier 2: Settings + Delete + Exit Lock (Checkmark) + Preview (Eye) + Exit App (Door)
+    // Tier 2: Settings + Delete + Preview (Eye) + Display (Checkmark) + Exit App (Door)
     private val rowTier2 = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
@@ -111,22 +112,22 @@ class FloatingControlView(
         onDeleteSelected()
     }
 
-    // Button: Exit Edit Mode / Lock & Done (Checkmark icon) (Tier 2)
-    private val btnExit = createIconButton(R.drawable.ic_check_done, context.getString(R.string.btn_lock_done)) {
-        onExitEditMode()
+    // Button: Preview Mode (Eye Icon) (Tier 2) - Minimizes toolbar and applies settings with touch pass-through
+    private val btnPreview = createIconButton(R.drawable.ic_preview_eye, context.getString(R.string.floating_btn_preview_desc)) {
+        onEnterPreviewMode()
     }
 
-    // Button: Preview Mode (Eye Icon) (Tier 2)
-    private val btnMinimize = createIconButton(R.drawable.ic_preview_eye, context.getString(R.string.floating_btn_minimize_desc)) {
-        toggleMinimize()
+    // Button: Display Mode (Checkmark icon) (Tier 2) - Applies settings and hides toolbar completely
+    private val btnDisplay = createIconButton(R.drawable.ic_check_done, context.getString(R.string.floating_btn_display_desc)) {
+        onEnterDisplayMode()
     }
 
-    // Button: Exit App (Door with arrow icon) (Tier 2) - Directly kills the app
+    // Button: Exit App (Door with arrow icon) (Tier 2) - Cleanly stops overlays and terminates app
     private val btnExitApp = createIconButton(R.drawable.ic_exit_door, context.getString(R.string.floating_btn_exit_app_desc)) {
         onExitApp()
     }
 
-    // Minimized Floating Pill Bubble
+    // Minimized Floating Pill Bubble (Preview Mode)
     private val minimizedBubble = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
@@ -144,14 +145,14 @@ class FloatingControlView(
             setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_preview_eye))
             val iconSize = (18 * context.resources.displayMetrics.density).toInt()
             layoutParams = LinearLayout.LayoutParams(iconSize, iconSize).apply {
-                val m = (4 * context.resources.displayMetrics.density).toInt()
+                val m = (5 * context.resources.displayMetrics.density).toInt()
                 setMargins(0, 0, m, 0)
             }
         }
 
         val label = TextView(context).apply {
             text = context.getString(R.string.minimized_preview_label)
-            textSize = 13f
+            textSize = 12.5f
             typeface = android.graphics.Typeface.DEFAULT_BOLD
             setTextColor(Color.WHITE)
         }
@@ -208,15 +209,22 @@ class FloatingControlView(
     // Advanced Color & Alpha Picker
     private lateinit var colorPicker: AdvancedColorPickerView
 
-    // Touch-Through Switch & Explanation
+    // Touch-Through Switch & Explanation (Settings applied in Preview & Display modes)
     private val touchThroughContainer = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
         val p = (6 * context.resources.displayMetrics.density).toInt()
+        val topM = (6 * context.resources.displayMetrics.density).toInt()
         setPadding(p, p, p, p)
+        layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            setMargins(0, topM, 0, 0)
+        }
         background = GradientDrawable().apply {
-            setColor(Color.parseColor("#3338BDF8"))
+            setColor(Color.parseColor("#330284C7")) // Subtle Sky Blue Accent
             cornerRadius = 10f * context.resources.displayMetrics.density
-            setStroke(1, Color.parseColor("#38BDF8"))
+            setStroke(1, Color.parseColor("#0284C7"))
         }
     }
 
@@ -224,6 +232,7 @@ class FloatingControlView(
         text = context.getString(R.string.touch_through_title)
         setTextColor(Color.WHITE)
         textSize = 12f
+        isChecked = true
         setOnCheckedChangeListener { _, isChecked ->
             currentSelectedMask?.let { mask ->
                 onUpdateMask(mask.copy(isTouchThrough = isChecked))
@@ -231,7 +240,7 @@ class FloatingControlView(
         }
     }
 
-    private val txtTouchExplanation = TextView(context).apply {
+    private val txtTouchThroughExplanation = TextView(context).apply {
         text = context.getString(R.string.touch_through_explanation)
         setTextColor(Color.parseColor("#BAE6FD"))
         textSize = 10.5f
@@ -284,11 +293,11 @@ class FloatingControlView(
         rowTier1.addView(btnAddParallelogram)
         rowTier1.addView(btnDuplicate)
 
-        // Build Tier 2 (Settings, Delete, Lock/Done [Checkmark], Preview [Eye], Exit App [Door])
+        // Build Tier 2 (Settings, Delete, Preview [Eye], Display [Checkmark], Exit App [Door])
         rowTier2.addView(btnSettings)
         rowTier2.addView(btnDelete)
-        rowTier2.addView(btnExit)
-        rowTier2.addView(btnMinimize)
+        rowTier2.addView(btnPreview)
+        rowTier2.addView(btnDisplay)
         rowTier2.addView(btnExitApp)
 
         mainToolbar.addView(rowTier1)
@@ -357,7 +366,7 @@ class FloatingControlView(
 
         // Touch Through Section
         touchThroughContainer.addView(switchTouchThrough)
-        touchThroughContainer.addView(txtTouchExplanation)
+        touchThroughContainer.addView(txtTouchThroughExplanation)
         settingsPanel.addView(touchThroughContainer)
 
         // Physical Pixel Lock Section
@@ -500,11 +509,9 @@ class FloatingControlView(
 
             switchTouchThrough.setOnCheckedChangeListener(null)
             switchTouchThrough.isChecked = selectedMask.isTouchThrough
-            updateTouchExplanation(selectedMask.isTouchThrough)
             switchTouchThrough.setOnCheckedChangeListener { _, isChecked ->
                 currentSelectedMask?.let { mask ->
                     if (mask.isTouchThrough != isChecked) {
-                        updateTouchExplanation(isChecked)
                         onUpdateMask(mask.copy(isTouchThrough = isChecked))
                     }
                 }
@@ -522,31 +529,21 @@ class FloatingControlView(
         }
     }
 
-    private fun updateTouchExplanation(isTouchThrough: Boolean) {
-        if (isTouchThrough) {
-            txtTouchExplanation.text = context.getString(R.string.touch_through_on)
-            txtTouchExplanation.setTextColor(Color.parseColor("#BAE6FD"))
-        } else {
-            txtTouchExplanation.text = context.getString(R.string.touch_through_off)
-            txtTouchExplanation.setTextColor(Color.parseColor("#FCA5A5"))
-        }
+    fun showPreviewMode() {
+        isMinimized = true
+        mainToolbar.visibility = View.GONE
+        minimizedBubble.visibility = View.VISIBLE
+    }
+
+    fun showEditMode() {
+        isMinimized = false
+        mainToolbar.visibility = View.VISIBLE
+        minimizedBubble.visibility = View.GONE
     }
 
     private fun toggleSettingsPanel() {
         isSettingsPanelExpanded = !isSettingsPanelExpanded
         settingsScrollView.visibility = if (isSettingsPanelExpanded) View.VISIBLE else View.GONE
-    }
-
-    private fun toggleMinimize() {
-        isMinimized = !isMinimized
-        if (isMinimized) {
-            mainToolbar.visibility = View.GONE
-            minimizedBubble.visibility = View.VISIBLE
-        } else {
-            mainToolbar.visibility = View.VISIBLE
-            minimizedBubble.visibility = View.GONE
-        }
-        onTogglePreviewMode(isMinimized)
     }
 
     private var initialX = 0
@@ -598,7 +595,7 @@ class FloatingControlView(
                 }
                 MotionEvent.ACTION_UP -> {
                     if (!isDragging) {
-                        toggleMinimize()
+                        onExitPreviewMode()
                     }
                     true
                 }
@@ -607,4 +604,3 @@ class FloatingControlView(
         }
     }
 }
-

@@ -16,7 +16,6 @@ import android.view.Gravity
 import android.view.Surface
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
-import com.example.MainActivity
 import com.example.R
 import com.example.data.AppDatabase
 import com.example.data.AppSettingsRepository
@@ -40,8 +39,7 @@ class OverlayService : Service() {
     private var floatingControlView: FloatingControlView? = null
 
     private var currentMaskList = listOf<MaskEntity>()
-    private var isEditMode = true
-    private var isPreviewMode = false
+    private var currentMode = AppSettingsRepository.MODE_EDIT
     private var selectedMaskId: String? = null
 
     // Screen dimensions and rotation tracking to preserve exact physical position
@@ -75,20 +73,32 @@ class OverlayService : Service() {
             }
             ACTION_START_EDIT_MODE -> {
                 settingsRepository.setServiceActive(true)
-                settingsRepository.setEditMode(true)
+                settingsRepository.setMode(AppSettingsRepository.MODE_EDIT)
+            }
+            ACTION_START_PREVIEW_MODE -> {
+                settingsRepository.setServiceActive(true)
+                settingsRepository.setMode(AppSettingsRepository.MODE_PREVIEW)
+            }
+            ACTION_START_DISPLAY_MODE -> {
+                settingsRepository.setServiceActive(true)
+                settingsRepository.setMode(AppSettingsRepository.MODE_DISPLAY)
             }
             ACTION_TOGGLE_MODE -> {
-                val nextMode = !settingsRepository.isEditMode.value
-                settingsRepository.setEditMode(nextMode)
+                val nextMode = if (currentMode == AppSettingsRepository.MODE_EDIT) {
+                    AppSettingsRepository.MODE_DISPLAY
+                } else {
+                    AppSettingsRepository.MODE_EDIT
+                }
+                settingsRepository.setMode(nextMode)
             }
             ACTION_ADD_MASK -> {
                 val shape = intent.getStringExtra(EXTRA_SHAPE_TYPE) ?: MaskEntity.SHAPE_RECT
                 addNewMask(shape)
             }
             else -> {
-                // Default launch opens directly in Edit Mode
+                // Default launch opens in Edit Mode
                 settingsRepository.setServiceActive(true)
-                settingsRepository.setEditMode(true)
+                settingsRepository.setMode(AppSettingsRepository.MODE_EDIT)
             }
         }
         return START_STICKY
@@ -96,8 +106,8 @@ class OverlayService : Service() {
 
     private fun observeState() {
         serviceScope.launch {
-            settingsRepository.isEditMode.collectLatest { editMode ->
-                isEditMode = editMode
+            settingsRepository.currentMode.collectLatest { mode ->
+                currentMode = mode
                 updateNotification()
                 refreshAllMaskViews()
             }
@@ -127,6 +137,10 @@ class OverlayService : Service() {
     private fun refreshAllMaskViews() {
         val (screenWidth, screenHeight) = getScreenDimensions()
         val screenRotation = getScreenRotation()
+
+        val isEdit = (currentMode == AppSettingsRepository.MODE_EDIT)
+        val isPreview = (currentMode == AppSettingsRepository.MODE_PREVIEW)
+        val isDisplay = (currentMode == AppSettingsRepository.MODE_DISPLAY)
 
         // 1. Remove views that no longer exist in DB
         val existingIds = currentMaskList.map { it.id }.toSet()
@@ -158,9 +172,9 @@ class OverlayService : Service() {
                 return@forEach
             }
 
-            val inActualEditMode = isEditMode && !isPreviewMode && !mask.isLocked
+            val inActualEditMode = isEdit && !mask.isLocked
             val isSelected = mask.id == selectedMaskId && inActualEditMode
-            val params = createMaskLayoutParams(mask, isEditMode, screenWidth, screenHeight, screenRotation)
+            val params = createMaskLayoutParams(mask, inActualEditMode, screenWidth, screenHeight, screenRotation)
 
             if (activeMaskViews.containsKey(mask.id)) {
                 val (view, _) = activeMaskViews[mask.id]!!
@@ -218,37 +232,49 @@ class OverlayService : Service() {
             }
         }
 
-        // 3. Update or attach Floating Control Bar in Edit Mode (ensure it stays on top of all mask shapes)
-        if (isEditMode) {
-            showFloatingController(forceReattach = newMaskAdded)
-        } else {
-            hideFloatingController()
+        // 3. Handle Floating Control View according to Mode:
+        // - EDIT Mode: Full toolbar visible
+        // - PREVIEW Mode: Minimized floating bubble visible
+        // - DISPLAY Mode: Toolbar completely removed (no toolbar at all)
+        when {
+            isEdit -> {
+                showFloatingController(forceReattach = newMaskAdded, preview = false)
+            }
+            isPreview -> {
+                showFloatingController(forceReattach = newMaskAdded, preview = true)
+            }
+            isDisplay -> {
+                hideFloatingController()
+            }
         }
     }
 
     private fun createMaskLayoutParams(
         mask: MaskEntity,
-        editMode: Boolean,
+        inActualEditMode: Boolean,
         screenWidth: Int,
         screenHeight: Int,
         rotation: Int
     ): WindowManager.LayoutParams {
-        val inActualEditMode = editMode && !isPreviewMode && !mask.isLocked
         val flags = if (inActualEditMode) {
+            // Edit Mode: Setting is ignored; touches are received for dragging & resizing
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-        } else if (mask.isTouchThrough) {
-            // Touch passes through completely in Lock/Preview/Display Mode when touch-through is enabled
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
         } else {
-            // Touch is blocked: touches on the mask will be intercepted and not passed to underlying apps
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+            // Preview & Display Modes: Apply the Touch-Through setting
+            if (mask.isTouchThrough) {
+                // Touch passes through to background apps
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                        WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                        WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+            } else {
+                // Touch is blocked across this shape
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                        WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+            }
         }
 
         val extraPadding = if (inActualEditMode) 32f * resources.displayMetrics.density else 0f
@@ -267,7 +293,7 @@ class OverlayService : Service() {
         }
     }
 
-    private fun showFloatingController(forceReattach: Boolean = false) {
+    private fun showFloatingController(forceReattach: Boolean = false, preview: Boolean = false) {
         val selectedMask = currentMaskList.find { it.id == selectedMaskId } ?: currentMaskList.firstOrNull()
 
         if (floatingControlView != null && forceReattach) {
@@ -304,25 +330,6 @@ class OverlayService : Service() {
                 windowManager = windowManager,
                 layoutParams = params,
                 onAddMask = { shapeType -> addNewMask(shapeType) },
-                onExitEditMode = {
-                    settingsRepository.setEditMode(false)
-                },
-                onUpdateMask = { updated ->
-                    serviceScope.launch(Dispatchers.IO) {
-                        maskRepository.updateMask(updated)
-                    }
-                },
-                onDeleteSelected = {
-                    val idToDelete = selectedMaskId ?: currentMaskList.lastOrNull()?.id
-                    idToDelete?.let { id ->
-                        serviceScope.launch(Dispatchers.IO) {
-                            maskRepository.deleteMask(id)
-                            if (selectedMaskId == id) {
-                                settingsRepository.setSelectedMaskId(null)
-                            }
-                        }
-                    }
-                },
                 onDuplicateSelected = {
                     selectedMask?.let { mask ->
                         serviceScope.launch(Dispatchers.IO) {
@@ -338,12 +345,33 @@ class OverlayService : Service() {
                         }
                     }
                 },
+                onDeleteSelected = {
+                    val idToDelete = selectedMaskId ?: currentMaskList.lastOrNull()?.id
+                    idToDelete?.let { id ->
+                        serviceScope.launch(Dispatchers.IO) {
+                            maskRepository.deleteMask(id)
+                            if (selectedMaskId == id) {
+                                settingsRepository.setSelectedMaskId(null)
+                            }
+                        }
+                    }
+                },
+                onUpdateMask = { updated ->
+                    serviceScope.launch(Dispatchers.IO) {
+                        maskRepository.updateMask(updated)
+                    }
+                },
+                onEnterPreviewMode = {
+                    settingsRepository.setMode(AppSettingsRepository.MODE_PREVIEW)
+                },
+                onEnterDisplayMode = {
+                    settingsRepository.setMode(AppSettingsRepository.MODE_DISPLAY)
+                },
+                onExitPreviewMode = {
+                    settingsRepository.setMode(AppSettingsRepository.MODE_EDIT)
+                },
                 onExitApp = {
                     killAndExitApp()
-                },
-                onTogglePreviewMode = { previewing ->
-                    isPreviewMode = previewing
-                    refreshAllMaskViews()
                 }
             )
 
@@ -355,6 +383,12 @@ class OverlayService : Service() {
             }
         }
 
+        if (preview) {
+            floatingControlView?.showPreviewMode()
+        } else {
+            floatingControlView?.showEditMode()
+        }
+
         floatingControlView?.updateState(selectedMask)
     }
 
@@ -363,10 +397,6 @@ class OverlayService : Service() {
         handleOrientationChange()
     }
 
-    /**
-     * Handles screen rotation changes, recalculates floating icon position across 0°, 90°, 180°, 270°,
-     * and refreshes overlay masks to conform to new dimensions.
-     */
     private fun handleOrientationChange() {
         val (newWidth, newHeight) = getScreenDimensions()
         val newRotation = getScreenRotation()
@@ -389,10 +419,6 @@ class OverlayService : Service() {
         refreshAllMaskViews()
     }
 
-    /**
-     * Preserves the floating icon / control bar's physical screen position across screen rotations
-     * (0°, 90°, 180°, 270°) by converting old coordinates into new coordinates and calling updateViewLayout.
-     */
     fun updateFloatingPositionOnRotation(
         oldWidth: Int,
         oldHeight: Int,
@@ -441,10 +467,6 @@ class OverlayService : Service() {
         }
     }
 
-    /**
-     * Completely cleans up all overlay views, stops foreground service,
-     * and terminates the application process cleanly.
-     */
     private fun killAndExitApp() {
         try {
             settingsRepository.setServiceActive(false)
@@ -582,7 +604,11 @@ class OverlayService : Service() {
             this, 1, stopIntent, PendingIntent.FLAG_IMMUTABLE
         )
 
-        val modeText = if (isEditMode) getString(R.string.service_mode_edit) else getString(R.string.service_mode_locked)
+        val modeText = when (currentMode) {
+            AppSettingsRepository.MODE_PREVIEW -> getString(R.string.service_mode_preview)
+            AppSettingsRepository.MODE_DISPLAY -> getString(R.string.service_mode_display)
+            else -> getString(R.string.service_mode_edit)
+        }
         val notifTitle = getString(R.string.service_notification_title)
         val notifContent = getString(R.string.service_notification_text, modeText, currentMaskList.size)
 
@@ -626,6 +652,8 @@ class OverlayService : Service() {
 
         const val ACTION_STOP_SERVICE = "com.example.ACTION_STOP_SERVICE"
         const val ACTION_START_EDIT_MODE = "com.example.ACTION_START_EDIT_MODE"
+        const val ACTION_START_PREVIEW_MODE = "com.example.ACTION_START_PREVIEW_MODE"
+        const val ACTION_START_DISPLAY_MODE = "com.example.ACTION_START_DISPLAY_MODE"
         const val ACTION_TOGGLE_MODE = "com.example.ACTION_TOGGLE_MODE"
         const val ACTION_ADD_MASK = "com.example.ACTION_ADD_MASK"
 

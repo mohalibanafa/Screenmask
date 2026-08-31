@@ -15,14 +15,15 @@
     <string name="btn_grant_permission">منح الإذن</string>
     <string name="permission_auto_launch_hint">عند منح الإذن، سيعمل التطبيق كشريط تحكم عائم مباشرة.</string>
 
-    <string name="floating_btn_mode_desc">تبديل وضع التعديل والقفل</string>
+    <string name="floating_btn_mode_desc">تبديل وضع التعديل والعرض</string>
     <string name="floating_btn_add_rect">إضافة مستطيل</string>
     <string name="floating_btn_add_circle">إضافة دائرة</string>
     <string name="floating_btn_add_parallelogram">إضافة متوازي أضلاع</string>
-    <string name="floating_btn_settings_desc">تعديل المظهر والإعدادات</string>
-    <string name="floating_btn_touch_desc">تبديل التفاعل باللمس</string>
+    <string name="floating_btn_settings_desc">تعديل المظهر والأبعاد</string>
     <string name="floating_btn_delete_desc">حذف الشكل المحدد</string>
     <string name="floating_btn_stop_desc">إيقاف الأشكال العائمة</string>
+    <string name="floating_btn_preview_desc">وضع المعاينة (تقليص شريط الأدوات مع استمرار اللمس)</string>
+    <string name="floating_btn_display_desc">وضع العرض (اعتماد الإعدادات بدون شريط أدوات)</string>
     <string name="floating_btn_minimize_desc">وضع المعاينة</string>
     <string name="floating_btn_expand_desc">توسيع شريط التحكم</string>
     <string name="floating_btn_exit_app_desc">إغلاق التطبيق</string>
@@ -56,27 +57,28 @@
     <string name="color_blue">أزرق</string>
     <string name="color_purple">بنفسجي</string>
 
-    <string name="touch_through_title">السماح باللمس عبر القناع</string>
-    <string name="touch_through_explanation">عند التفعيل، يمكن التفاعل مع الشاشة والتطبيقات واللمس من خلال القناع.</string>
-    <string name="touch_through_on">مفعل: اللمس يمر للتطبيقات وخلف القناع</string>
-    <string name="touch_through_off">معطل: حجب واعتراض اللمسات لحماية الشاشة</string>
+    <string name="touch_through_title">السماح باللمس عبر الشكل</string>
+    <string name="touch_through_explanation">في وضعي المعاينة والعرض: عند التفعيل يمر اللمس للتطبيقات، وعند التعطيل يُحجب اللمس عبر الشكل لحماية الشاشة المتضررة. (لا يُطبق في وضع التعديل).</string>
 
     <string name="physical_lock_title">تثبيت الموقع الفيزيائي على الشاشة</string>
     <string name="physical_lock_explanation">تثبيت القناع في موقعه الفيزيائي على الشاشة لمنع تحركه عند تدوير الجهاز.</string>
 
     <string name="btn_duplicate_shape">تكرار</string>
     <string name="btn_delete_shape">حذف</string>
-    <string name="btn_lock_done">حفظ وتثبيت</string>
+    <string name="btn_lock_done">وضع العرض (اعتماد بدون شريط أدوات)</string>
+    <string name="btn_preview_mode">وضع المعاينة (تقليص شريط الأدوات)</string>
     <string name="btn_stop_service">إيقاف الأقنعة</string>
 
     <string name="service_notification_title">قناع الشاشة</string>
     <string name="service_notification_text">الحالة: %1$s • %2$d قناع نشط</string>
     <string name="service_mode_edit">وضع التعديل</string>
-    <string name="service_mode_locked">وضع التثبيت</string>
+    <string name="service_mode_preview">وضع المعاينة</string>
+    <string name="service_mode_display">وضع العرض</string>
+    <string name="service_mode_locked">وضع العرض</string>
     <string name="service_action_edit">وضع التعديل</string>
     <string name="service_action_stop">إيقاف الأقنعة</string>
 
-    <string name="minimized_preview_label">معاينة</string>
+    <string name="minimized_preview_label">معاينة (اضغط للتعديل)</string>
     <string name="mask_title_format">شكل %1$d</string>
     <string name="tile_label">قناع الشاشة</string>
 </resources>

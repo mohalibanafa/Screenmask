@@ -13,7 +13,10 @@ class AppSettingsRepository(context: Context) {
     private val _isServiceActive = MutableStateFlow(prefs.getBoolean(KEY_SERVICE_ACTIVE, false))
     val isServiceActive: StateFlow<Boolean> = _isServiceActive.asStateFlow()
 
-    private val _isEditMode = MutableStateFlow(prefs.getBoolean(KEY_EDIT_MODE, true))
+    private val _currentMode = MutableStateFlow(prefs.getString(KEY_CURRENT_MODE, MODE_EDIT) ?: MODE_EDIT)
+    val currentMode: StateFlow<String> = _currentMode.asStateFlow()
+
+    private val _isEditMode = MutableStateFlow(_currentMode.value == MODE_EDIT)
     val isEditMode: StateFlow<Boolean> = _isEditMode.asStateFlow()
 
     private val _selectedMaskId = MutableStateFlow<String?>(prefs.getString(KEY_SELECTED_MASK, null))
@@ -27,9 +30,14 @@ class AppSettingsRepository(context: Context) {
         _isServiceActive.value = active
     }
 
+    fun setMode(mode: String) {
+        prefs.edit().putString(KEY_CURRENT_MODE, mode).apply()
+        _currentMode.value = mode
+        _isEditMode.value = (mode == MODE_EDIT)
+    }
+
     fun setEditMode(editMode: Boolean) {
-        prefs.edit().putBoolean(KEY_EDIT_MODE, editMode).apply()
-        _isEditMode.value = editMode
+        setMode(if (editMode) MODE_EDIT else MODE_DISPLAY)
     }
 
     fun setSelectedMaskId(id: String?) {
@@ -43,8 +51,12 @@ class AppSettingsRepository(context: Context) {
     }
 
     companion object {
+        const val MODE_EDIT = "MODE_EDIT"
+        const val MODE_PREVIEW = "MODE_PREVIEW"
+        const val MODE_DISPLAY = "MODE_DISPLAY"
+
         private const val KEY_SERVICE_ACTIVE = "key_service_active"
-        private const val KEY_EDIT_MODE = "key_edit_mode"
+        private const val KEY_CURRENT_MODE = "key_current_mode"
         private const val KEY_SELECTED_MASK = "key_selected_mask"
         private const val KEY_START_ON_BOOT = "key_start_on_boot"
 

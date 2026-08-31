@@ -19,9 +19,10 @@
     <string name="floating_btn_add_circle">Add Circle</string>
     <string name="floating_btn_add_parallelogram">Add Parallelogram</string>
     <string name="floating_btn_settings_desc">Adjust Appearance and Settings</string>
-    <string name="floating_btn_touch_desc">Toggle Touch-Through</string>
     <string name="floating_btn_delete_desc">Delete Selected Shape</string>
     <string name="floating_btn_stop_desc">Stop Floating Shapes</string>
+    <string name="floating_btn_preview_desc">Preview Mode (Minimized Toolbar)</string>
+    <string name="floating_btn_display_desc">Display Mode (Apply Without Toolbar)</string>
     <string name="floating_btn_minimize_desc">Preview Mode</string>
     <string name="floating_btn_expand_desc">Expand Controls</string>
     <string name="floating_btn_exit_app_desc">Exit Application</string>
@@ -56,26 +57,27 @@
     <string name="color_purple">Purple</string>
 
     <string name="touch_through_title">Allow Touch-Through</string>
-    <string name="touch_through_explanation">When enabled, touch interactions pass directly through the mask to underlying applications.</string>
-    <string name="touch_through_on">Enabled: Touch passes through to background apps</string>
-    <string name="touch_through_off">Disabled: Touches on the mask are blocked</string>
+    <string name="touch_through_explanation">In Preview &amp; Display modes: enabled lets touch pass to underlying apps; disabled blocks touch on this shape. (Ignored in Edit mode).</string>
 
     <string name="physical_lock_title">Physical Hardware Position Lock</string>
     <string name="physical_lock_explanation">Fixes the mask to hardware screen coordinates to keep flaws covered across device rotation.</string>
 
     <string name="btn_duplicate_shape">Duplicate</string>
     <string name="btn_delete_shape">Delete</string>
-    <string name="btn_lock_done">Apply and Lock</string>
+    <string name="btn_lock_done">Display Mode (Apply Without Toolbar)</string>
+    <string name="btn_preview_mode">Preview Mode (Minimized Toolbar)</string>
     <string name="btn_stop_service">Stop Overlays</string>
 
     <string name="service_notification_title">Screen Mask</string>
     <string name="service_notification_text">Status: %1$s • %2$d mask(s) active</string>
     <string name="service_mode_edit">Edit Mode</string>
-    <string name="service_mode_locked">Locked Mode</string>
+    <string name="service_mode_preview">Preview Mode</string>
+    <string name="service_mode_display">Display Mode</string>
+    <string name="service_mode_locked">Display Mode</string>
     <string name="service_action_edit">Edit Mode</string>
     <string name="service_action_stop">Stop Overlays</string>
 
-    <string name="minimized_preview_label">Preview</string>
+    <string name="minimized_preview_label">Preview (Tap to edit)</string>
     <string name="mask_title_format">Shape %1$d</string>
     <string name="tile_label">Screen Mask</string>
 </resources>
