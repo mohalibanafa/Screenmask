@@ -41,6 +41,7 @@ class OverlayService : Service() {
 
     private var currentMaskList = listOf<MaskEntity>()
     private var isEditMode = true
+    private var isPreviewMode = false
     private var selectedMaskId: String? = null
 
     // Screen dimensions and rotation tracking to preserve exact physical position
@@ -157,12 +158,13 @@ class OverlayService : Service() {
                 return@forEach
             }
 
-            val isSelected = mask.id == selectedMaskId
+            val inActualEditMode = isEditMode && !isPreviewMode && !mask.isLocked
+            val isSelected = mask.id == selectedMaskId && inActualEditMode
             val params = createMaskLayoutParams(mask, isEditMode, screenWidth, screenHeight, screenRotation)
 
             if (activeMaskViews.containsKey(mask.id)) {
                 val (view, _) = activeMaskViews[mask.id]!!
-                view.updateData(mask, isEditMode, isSelected, screenWidth, screenHeight, screenRotation)
+                view.updateData(mask, inActualEditMode, isSelected, screenWidth, screenHeight, screenRotation)
                 try {
                     windowManager.updateViewLayout(view, params)
                 } catch (e: Exception) {
@@ -174,7 +176,7 @@ class OverlayService : Service() {
                 val maskView = OverlayMaskView(
                     context = this,
                     mask = mask,
-                    isEditMode = isEditMode,
+                    isEditMode = inActualEditMode,
                     isMaskSelected = isSelected,
                     screenWidth = screenWidth,
                     screenHeight = screenHeight,
@@ -231,12 +233,13 @@ class OverlayService : Service() {
         screenHeight: Int,
         rotation: Int
     ): WindowManager.LayoutParams {
-        val flags = if (editMode && !mask.isLocked) {
+        val inActualEditMode = editMode && !isPreviewMode && !mask.isLocked
+        val flags = if (inActualEditMode) {
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
         } else if (mask.isTouchThrough) {
-            // Touch passes through completely in Lock/Display Mode when touch-through is enabled
+            // Touch passes through completely in Lock/Preview/Display Mode when touch-through is enabled
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                     WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
@@ -248,7 +251,7 @@ class OverlayService : Service() {
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
         }
 
-        val extraPadding = if (editMode && !mask.isLocked) 32f * resources.displayMetrics.density else 0f
+        val extraPadding = if (inActualEditMode) 32f * resources.displayMetrics.density else 0f
         val layout = PhysicalPixelTransformer.calculateMaskLayout(mask, screenWidth, screenHeight, rotation, extraPadding)
 
         return WindowManager.LayoutParams(
@@ -337,6 +340,10 @@ class OverlayService : Service() {
                 },
                 onExitApp = {
                     killAndExitApp()
+                },
+                onTogglePreviewMode = { previewing ->
+                    isPreviewMode = previewing
+                    refreshAllMaskViews()
                 }
             )
 

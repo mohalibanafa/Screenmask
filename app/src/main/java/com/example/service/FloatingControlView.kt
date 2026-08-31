@@ -33,7 +33,8 @@ class FloatingControlView(
     private val onUpdateMask: (MaskEntity) -> Unit,
     private val onDeleteSelected: () -> Unit,
     private val onDuplicateSelected: () -> Unit,
-    private val onExitApp: () -> Unit
+    private val onExitApp: () -> Unit,
+    private val onTogglePreviewMode: (Boolean) -> Unit = {}
 ) : FrameLayout(context) {
 
     fun getLayoutParamsTyped(): WindowManager.LayoutParams = layoutParams
@@ -499,9 +500,11 @@ class FloatingControlView(
 
             switchTouchThrough.setOnCheckedChangeListener(null)
             switchTouchThrough.isChecked = selectedMask.isTouchThrough
+            updateTouchExplanation(selectedMask.isTouchThrough)
             switchTouchThrough.setOnCheckedChangeListener { _, isChecked ->
                 currentSelectedMask?.let { mask ->
                     if (mask.isTouchThrough != isChecked) {
+                        updateTouchExplanation(isChecked)
                         onUpdateMask(mask.copy(isTouchThrough = isChecked))
                     }
                 }
@@ -519,6 +522,16 @@ class FloatingControlView(
         }
     }
 
+    private fun updateTouchExplanation(isTouchThrough: Boolean) {
+        if (isTouchThrough) {
+            txtTouchExplanation.text = "✓ اللمس يمر للتطبيقات وخلف القناع (في وضع المعاينة 👁️ والقفل ✔️)"
+            txtTouchExplanation.setTextColor(Color.parseColor("#BAE6FD"))
+        } else {
+            txtTouchExplanation.text = "⊘ يتم حجب واعتراض اللمسات لحماية الشاشة (في وضع المعاينة 👁️ والقفل ✔️)"
+            txtTouchExplanation.setTextColor(Color.parseColor("#FCA5A5"))
+        }
+    }
+
     private fun toggleSettingsPanel() {
         isSettingsPanelExpanded = !isSettingsPanelExpanded
         settingsScrollView.visibility = if (isSettingsPanelExpanded) View.VISIBLE else View.GONE
@@ -533,6 +546,7 @@ class FloatingControlView(
             mainToolbar.visibility = View.VISIBLE
             minimizedBubble.visibility = View.GONE
         }
+        onTogglePreviewMode(isMinimized)
     }
 
     private var initialX = 0
