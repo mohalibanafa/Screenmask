@@ -180,10 +180,10 @@ class ExampleUnitTest {
         val layout90 = com.example.service.PhysicalPixelTransformer.calculateMaskLayout(
             mask, 2400, 1080, Surface.ROTATION_90
         )
-        // Physical Y (480..960) -> X in ROTATION_90 = h0 - Y = 2400 - 960 = 1440
-        // Physical X (108..324) -> Y in ROTATION_90 = X = 108
-        assertEquals(1440, layout90.winX)
-        assertEquals(108, layout90.winY)
+        // Physical Y (480..960) -> X in ROTATION_90 = Y = 480
+        // Physical X (108..324) -> Y in ROTATION_90 = W0 - X = 1080 - 324 = 756
+        assertEquals(480, layout90.winX)
+        assertEquals(756, layout90.winY)
         assertEquals(480, layout90.winWidth)
         assertEquals(216, layout90.winHeight)
 
@@ -200,8 +200,10 @@ class ExampleUnitTest {
         val layout270 = com.example.service.PhysicalPixelTransformer.calculateMaskLayout(
             mask, 2400, 1080, Surface.ROTATION_270
         )
-        assertEquals(480, layout270.winX)
-        assertEquals(756, layout270.winY)
+        // Physical Y (480..960) -> X in ROTATION_270 = H0 - Y = 2400 - 960 = 1440
+        // Physical X (108..324) -> Y in ROTATION_270 = X = 108
+        assertEquals(1440, layout270.winX)
+        assertEquals(108, layout270.winY)
         assertEquals(480, layout270.winWidth)
         assertEquals(216, layout270.winHeight)
     }

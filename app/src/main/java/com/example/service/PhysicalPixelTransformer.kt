@@ -22,7 +22,9 @@ object PhysicalPixelTransformer {
         val q1: Point2D,
         val q2: Point2D,
         val q3: Point2D,
-        val q4: Point2D
+        val q4: Point2D,
+        val padX: Float = 0f,
+        val padY: Float = 0f
     )
 
     /**
@@ -43,9 +45,9 @@ object PhysicalPixelTransformer {
     fun physicalToWindow(xp: Float, yp: Float, w0: Float, h0: Float, rotation: Int): Point2D {
         return when (rotation) {
             Surface.ROTATION_0 -> Point2D(xp, yp)
-            Surface.ROTATION_90 -> Point2D(h0 - yp, xp)
+            Surface.ROTATION_90 -> Point2D(yp, w0 - xp)
             Surface.ROTATION_180 -> Point2D(w0 - xp, h0 - yp)
-            Surface.ROTATION_270 -> Point2D(yp, w0 - xp)
+            Surface.ROTATION_270 -> Point2D(h0 - yp, xp)
             else -> Point2D(xp, yp)
         }
     }
@@ -56,9 +58,9 @@ object PhysicalPixelTransformer {
     fun windowToPhysical(xw: Float, yw: Float, w0: Float, h0: Float, rotation: Int): Point2D {
         return when (rotation) {
             Surface.ROTATION_0 -> Point2D(xw, yw)
-            Surface.ROTATION_90 -> Point2D(yw, h0 - xw)
+            Surface.ROTATION_90 -> Point2D(w0 - yw, xw)
             Surface.ROTATION_180 -> Point2D(w0 - xw, h0 - yw)
-            Surface.ROTATION_270 -> Point2D(w0 - yw, xw)
+            Surface.ROTATION_270 -> Point2D(yw, h0 - xw)
             else -> Point2D(xw, yw)
         }
     }
@@ -69,9 +71,9 @@ object PhysicalPixelTransformer {
     fun windowDeltaToPhysical(dxw: Float, dyw: Float, rotation: Int): Point2D {
         return when (rotation) {
             Surface.ROTATION_0 -> Point2D(dxw, dyw)
-            Surface.ROTATION_90 -> Point2D(dyw, -dxw)
+            Surface.ROTATION_90 -> Point2D(-dyw, dxw)
             Surface.ROTATION_180 -> Point2D(-dxw, -dyw)
-            Surface.ROTATION_270 -> Point2D(-dyw, dxw)
+            Surface.ROTATION_270 -> Point2D(dyw, -dxw)
             else -> Point2D(dxw, dyw)
         }
     }
@@ -79,26 +81,35 @@ object PhysicalPixelTransformer {
     /**
      * Calculates the WindowManager layout parameters (x, y, width, height) and the relative
      * corner points (q1, q2, q3, q4) for drawing inside the view.
+     *
+     * @param extraPadding Padding in pixels added around the bounding box (useful in Edit Mode
+     *                     to ensure handles and touch zones are fully contained and never clipped).
      */
     fun calculateMaskLayout(
         mask: MaskEntity,
         screenWidth: Int,
         screenHeight: Int,
-        rotation: Int
+        rotation: Int,
+        extraPadding: Float = 0f
     ): TransformedMaskLayout {
         if (!mask.isPhysicalLock) {
             // Logical screen relative mode
-            val pxX = (mask.xRatio * screenWidth).toInt()
-            val pxY = (mask.yRatio * screenHeight).toInt()
-            val pxW = (mask.widthRatio * screenWidth).toInt().coerceAtLeast(1)
-            val pxH = (mask.heightRatio * screenHeight).toInt().coerceAtLeast(1)
+            val pxX = (mask.xRatio * screenWidth)
+            val pxY = (mask.yRatio * screenHeight)
+            val pxW = (mask.widthRatio * screenWidth).coerceAtLeast(1f)
+            val pxH = (mask.heightRatio * screenHeight).coerceAtLeast(1f)
 
-            val q1 = Point2D(mask.p1x * pxW, mask.p1y * pxH)
-            val q2 = Point2D(mask.p2x * pxW, mask.p2y * pxH)
-            val q3 = Point2D(mask.p3x * pxW, mask.p3y * pxH)
-            val q4 = Point2D(mask.p4x * pxW, mask.p4y * pxH)
+            val winX = (pxX - extraPadding).toInt()
+            val winY = (pxY - extraPadding).toInt()
+            val winW = max((pxW + 2 * extraPadding).toInt(), 1)
+            val winH = max((pxH + 2 * extraPadding).toInt(), 1)
 
-            return TransformedMaskLayout(pxX, pxY, pxW, pxH, q1, q2, q3, q4)
+            val q1 = Point2D(extraPadding + mask.p1x * pxW, extraPadding + mask.p1y * pxH)
+            val q2 = Point2D(extraPadding + mask.p2x * pxW, extraPadding + mask.p2y * pxH)
+            val q3 = Point2D(extraPadding + mask.p3x * pxW, extraPadding + mask.p3y * pxH)
+            val q4 = Point2D(extraPadding + mask.p4x * pxW, extraPadding + mask.p4y * pxH)
+
+            return TransformedMaskLayout(winX, winY, winW, winH, q1, q2, q3, q4, extraPadding, extraPadding)
         }
 
         val (w0, h0) = getNaturalDimensions(screenWidth, screenHeight, rotation)
@@ -129,17 +140,17 @@ object PhysicalPixelTransformer {
         val minWinY = minOf(c1.y, c2.y, c3.y, c4.y)
         val maxWinY = maxOf(c1.y, c2.y, c3.y, c4.y)
 
-        val winX = minWinX.toInt()
-        val winY = minWinY.toInt()
-        val winW = max((maxWinX - minWinX).toInt(), 1)
-        val winH = max((maxWinY - minWinY).toInt(), 1)
+        val winX = (minWinX - extraPadding).toInt()
+        val winY = (minWinY - extraPadding).toInt()
+        val winW = max((maxWinX - minWinX + 2 * extraPadding).toInt(), 1)
+        val winH = max((maxWinY - minWinY + 2 * extraPadding).toInt(), 1)
 
         // Points inside the view coordinate system
-        val q1 = Point2D(c1.x - minWinX, c1.y - minWinY)
-        val q2 = Point2D(c2.x - minWinX, c2.y - minWinY)
-        val q3 = Point2D(c3.x - minWinX, c3.y - minWinY)
-        val q4 = Point2D(c4.x - minWinX, c4.y - minWinY)
+        val q1 = Point2D(c1.x - winX, c1.y - winY)
+        val q2 = Point2D(c2.x - winX, c2.y - winY)
+        val q3 = Point2D(c3.x - winX, c3.y - winY)
+        val q4 = Point2D(c4.x - winX, c4.y - winY)
 
-        return TransformedMaskLayout(winX, winY, winW, winH, q1, q2, q3, q4)
+        return TransformedMaskLayout(winX, winY, winW, winH, q1, q2, q3, q4, extraPadding, extraPadding)
     }
 }

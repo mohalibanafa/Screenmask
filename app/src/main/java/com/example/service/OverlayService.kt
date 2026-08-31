@@ -170,6 +170,7 @@ class OverlayService : Service() {
                 }
                 activeMaskViews[mask.id] = Pair(view, params)
             } else {
+                lateinit var maskViewRef: OverlayMaskView
                 val maskView = OverlayMaskView(
                     context = this,
                     mask = mask,
@@ -193,8 +194,17 @@ class OverlayService : Service() {
                     },
                     onSelect = { maskId ->
                         settingsRepository.setSelectedMaskId(maskId)
+                    },
+                    onLayoutUpdate = { newParams ->
+                        try {
+                            windowManager.updateViewLayout(maskViewRef, newParams)
+                            activeMaskViews[mask.id] = Pair(maskViewRef, newParams)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
                     }
                 )
+                maskViewRef = maskView
 
                 try {
                     windowManager.addView(maskView, params)
@@ -238,7 +248,8 @@ class OverlayService : Service() {
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
         }
 
-        val layout = PhysicalPixelTransformer.calculateMaskLayout(mask, screenWidth, screenHeight, rotation)
+        val extraPadding = if (editMode && !mask.isLocked) 32f * resources.displayMetrics.density else 0f
+        val layout = PhysicalPixelTransformer.calculateMaskLayout(mask, screenWidth, screenHeight, rotation, extraPadding)
 
         return WindowManager.LayoutParams(
             layout.winWidth,
