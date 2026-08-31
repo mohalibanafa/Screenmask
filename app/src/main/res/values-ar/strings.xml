@@ -1,54 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">قناع الشاشة</string>
-    <string name="app_subtitle_active">المنبثقة العائمة نشطة • %1$d شكل على الشاشة</string>
-    <string name="app_subtitle_inactive">تغطية الكسور والبكسلات التالفة بسهولة</string>
-    <string name="status_active">مُفَعّل</string>
-    <string name="status_inactive">متوقف</string>
+    <string name="app_subtitle_active">القناع العائم نشط • %1$d شكل</string>
+    <string name="app_subtitle_inactive">تغطية الكسور والبكسلات التالفة وعيوب الشاشة</string>
+    <string name="status_active">نشط</string>
+    <string name="status_inactive">غير نشط</string>
 
-    <string name="permission_screen_title">تفعيل الظهور فوق التطبيقات</string>
-    <string name="permission_screen_subtitle">إذن العرض فوق الشاشة مطلوب</string>
-    <string name="permission_screen_desc">لكي يفتح التطبيق مباشرة كمنبثقة عائمة فوق الشاشة ويتيح لك رسم وتعديل الأشكال فوق التطبيقات الأخرى، يُرجى تفعيل إذن \'الظهور فوق التطبيقات\'.</string>
-    <string name="permission_step_1">1. اضغط زر \'تفعيل الإذن الآن\' أدناه</string>
-    <string name="permission_step_2">2. اختر تطبيق \'قناع الشاشة\' من القائمة وقم بتفعيله</string>
-    <string name="permission_step_3">3. سيبدأ التطبيق بالعمل فوراً في وضع التعديل العائم!</string>
-    <string name="btn_grant_permission">تفعيل الإذن الآن</string>
-    <string name="permission_auto_launch_hint">بعد منح الإذن، سيعمل التطبيق كلياً كمنبثقة عائمة دون فتح أي واجهة خلفية.</string>
+    <string name="permission_screen_title">الظهور فوق التطبيقات الأخرى</string>
+    <string name="permission_screen_subtitle">الإذن مطلوب</string>
+    <string name="permission_screen_desc">لعرض الأشكال والأقنعة فوق شاشة الجهاز والتطبيقات الأخرى، يُرجى منح إذن الظهور فوق التطبيقات.</string>
+    <string name="permission_step_1">1. اضغط على زر \"منح الإذن\" أدناه</string>
+    <string name="permission_step_2">2. اختر \"قناع الشاشة\" من القائمة وقم بتفعيله</string>
+    <string name="permission_step_3">3. سيظهر شريط التحكم العائم مباشرة</string>
+    <string name="btn_grant_permission">منح الإذن</string>
+    <string name="permission_auto_launch_hint">عند منح الإذن، سيعمل التطبيق كشريط تحكم عائم مباشرة.</string>
 
-    <string name="floating_btn_mode_desc">تبديل وضع التعديل / القفل</string>
-    <string name="floating_btn_add_rect">إضافة مربع / مستطيل</string>
+    <string name="floating_btn_mode_desc">تبديل وضع التعديل والقفل</string>
+    <string name="floating_btn_add_rect">إضافة مستطيل</string>
     <string name="floating_btn_add_circle">إضافة دائرة</string>
-    <string name="floating_btn_add_parallelogram">إضافة متوازي أضلاع (حر الزوايا)</string>
-    <string name="floating_btn_settings_desc">لوحة السلايدرات والمظهر</string>
-    <string name="floating_btn_touch_desc">تبديل وضع اللمس</string>
+    <string name="floating_btn_add_parallelogram">إضافة متوازي أضلاع</string>
+    <string name="floating_btn_settings_desc">تعديل المظهر والإعدادات</string>
+    <string name="floating_btn_touch_desc">تبديل التفاعل باللمس</string>
     <string name="floating_btn_delete_desc">حذف الشكل المحدد</string>
     <string name="floating_btn_stop_desc">إيقاف الأشكال العائمة</string>
     <string name="floating_btn_minimize_desc">وضع المعاينة</string>
     <string name="floating_btn_expand_desc">توسيع شريط التحكم</string>
-    <string name="floating_btn_exit_app_desc">الخروج من التطبيق وإغلاقه</string>
-    <string name="confirm_exit_title">الخروج من التطبيق</string>
-    <string name="confirm_exit_message">هل تريد إيقاف الأشكال العائمة وإغلاق التطبيق بالكامل؟</string>
-    <string name="confirm_exit_btn_confirm">خروج وإغلاق</string>
+    <string name="floating_btn_exit_app_desc">إغلاق التطبيق</string>
+    <string name="confirm_exit_title">إغلاق التطبيق</string>
+    <string name="confirm_exit_message">هل تريد بالتأكيد إيقاف جميع الأقنعة وإغلاق التطبيق بالكامل؟</string>
+    <string name="confirm_exit_btn_confirm">إغلاق</string>
     <string name="confirm_exit_btn_cancel">إلغاء</string>
 
-    <string name="panel_title_edit">تعديل أبعاد ومظهر الشكل</string>
-    <string name="panel_shape_type">نوع الشكل:</string>
+    <string name="panel_title_edit">أبعاد ومظهر الشكل</string>
+    <string name="panel_shape_type">نوع الشكل</string>
     <string name="shape_rect">مستطيل</string>
-    <string name="shape_rounded">حواف دائرية</string>
-    <string name="shape_circle">دائري</string>
-    <string name="shape_parallelogram">متوازي أضلاع / حر</string>
+    <string name="shape_rounded">مستطيل ذو حواف دائرية</string>
+    <string name="shape_circle">دائرة</string>
+    <string name="shape_parallelogram">متوازي أضلاع</string>
 
-    <string name="slider_width">العرض (Width)</string>
-    <string name="slider_height">الارتفاع / السماكة (Height)</string>
-    <string name="slider_corner_radius">استدارة الحواف (Radius)</string>
-    <string name="slider_pos_x">الموقع الأفقي (X)</string>
-    <string name="slider_pos_y">الموقع الرأسي (Y)</string>
+    <string name="slider_width">العرض</string>
+    <string name="slider_height">الارتفاع</string>
+    <string name="slider_corner_radius">استدارة الحواف</string>
+    <string name="slider_pos_x">الموضع الأفقي (س)</string>
+    <string name="slider_pos_y">الموضع الرأسي (ص)</string>
 
-    <string name="slider_opacity">الشفافية والعتمة (Opacity)</string>
-    <string name="color_section_title">اللون:</string>
+    <string name="slider_opacity">درجة الشفافية</string>
+    <string name="color_section_title">اللون</string>
     <string name="color_picker_title">اللون والشفافية</string>
     <string name="color_pure_black">أسود</string>
-    <string name="color_dark_gray">رمادي</string>
+    <string name="color_dark_gray">رمادي داكن</string>
     <string name="color_white">أبيض</string>
     <string name="color_red">أحمر</string>
     <string name="color_amber">برتقالي</string>
@@ -56,25 +56,25 @@
     <string name="color_blue">أزرق</string>
     <string name="color_purple">بنفسجي</string>
 
-    <string name="touch_through_title">وضع اللمس عبر المجسمات (Touch-through)</string>
-    <string name="touch_through_explanation">💡 عند تشغيل هذا الوضع يصبح المجسم شبه شفاف لكن يمكن اللمس والنقر والتفاعل عبره على الشاشة وتطبيقاتك تحته بكل سلاسة.</string>
-    <string name="touch_through_on">مُفَعّل (اللمس يمر عبر المجسم)</string>
-    <string name="touch_through_off">معطّل (اللمس محجوب كلياً)</string>
+    <string name="touch_through_title">السماح باللمس عبر القناع</string>
+    <string name="touch_through_explanation">عند التفعيل، يمكن التفاعل مع الشاشة والتطبيقات واللمس من خلال القناع.</string>
+    <string name="touch_through_on">مفعل: اللمس يمر للتطبيقات وخلف القناع</string>
+    <string name="touch_through_off">معطل: حجب واعتراض اللمسات لحماية الشاشة</string>
 
-    <string name="physical_lock_title">تثبيت البكسل الفيزيائي (تغطية الكسر)</string>
-    <string name="physical_lock_explanation">🔒 يُثبت الشكل في نفس البكسلات الفيزيائية لزجاج الشاشة تماماً لتغطية الكسور والعيوب دون أن يدور أو يتزحزح الشكل عند تدوير الهاتف.</string>
+    <string name="physical_lock_title">تثبيت الموقع الفيزيائي على الشاشة</string>
+    <string name="physical_lock_explanation">تثبيت القناع في موقعه الفيزيائي على الشاشة لمنع تحركه عند تدوير الجهاز.</string>
 
     <string name="btn_duplicate_shape">تكرار</string>
     <string name="btn_delete_shape">حذف</string>
-    <string name="btn_lock_done">🔒 حفظ وتطبيق (قفل)</string>
-    <string name="btn_stop_service">إيقاف الأشكال</string>
+    <string name="btn_lock_done">حفظ وتثبيت</string>
+    <string name="btn_stop_service">إيقاف الأقنعة</string>
 
-    <string name="service_notification_title">أشكال قناع الشاشة العائمة</string>
-    <string name="service_notification_text">الحالة: %1$s • %2$d شكل عائم على الشاشة</string>
+    <string name="service_notification_title">قناع الشاشة</string>
+    <string name="service_notification_text">الحالة: %1$s • %2$d قناع نشط</string>
     <string name="service_mode_edit">وضع التعديل</string>
-    <string name="service_mode_locked">وضع القفل والتثبيت</string>
-    <string name="service_action_edit">✏️ وضع التعديل</string>
-    <string name="service_action_stop">⏹️ إيقاف الأشكال العائمة</string>
+    <string name="service_mode_locked">وضع التثبيت</string>
+    <string name="service_action_edit">وضع التعديل</string>
+    <string name="service_action_stop">إيقاف الأقنعة</string>
 
     <string name="minimized_preview_label">معاينة</string>
     <string name="mask_title_format">شكل %1$d</string>

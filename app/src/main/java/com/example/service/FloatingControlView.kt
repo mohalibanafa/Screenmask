@@ -150,7 +150,7 @@ class FloatingControlView(
         }
 
         val label = TextView(context).apply {
-            text = "${context.getString(R.string.minimized_preview_label)} ⤢"
+            text = context.getString(R.string.minimized_preview_label)
             textSize = 13f
             typeface = android.graphics.Typeface.DEFAULT_BOLD
             setTextColor(Color.WHITE)
@@ -524,10 +524,10 @@ class FloatingControlView(
 
     private fun updateTouchExplanation(isTouchThrough: Boolean) {
         if (isTouchThrough) {
-            txtTouchExplanation.text = "✓ اللمس يمر للتطبيقات وخلف القناع (في وضع المعاينة 👁️ والقفل ✔️)"
+            txtTouchExplanation.text = context.getString(R.string.touch_through_on)
             txtTouchExplanation.setTextColor(Color.parseColor("#BAE6FD"))
         } else {
-            txtTouchExplanation.text = "⊘ يتم حجب واعتراض اللمسات لحماية الشاشة (في وضع المعاينة 👁️ والقفل ✔️)"
+            txtTouchExplanation.text = context.getString(R.string.touch_through_off)
             txtTouchExplanation.setTextColor(Color.parseColor("#FCA5A5"))
         }
     }
