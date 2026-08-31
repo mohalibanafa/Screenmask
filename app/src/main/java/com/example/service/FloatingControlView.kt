@@ -20,6 +20,8 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.example.R
 import com.example.data.MaskEntity
+import java.util.Locale
+import kotlin.math.roundToInt
 
 @SuppressLint("ViewClickAndTouchUnspecified")
 class FloatingControlView(
@@ -30,8 +32,11 @@ class FloatingControlView(
     private val onExitEditMode: () -> Unit,
     private val onUpdateMask: (MaskEntity) -> Unit,
     private val onDeleteSelected: () -> Unit,
-    private val onDuplicateSelected: () -> Unit
+    private val onDuplicateSelected: () -> Unit,
+    private val onExitApp: () -> Unit
 ) : FrameLayout(context) {
+
+    fun getLayoutParamsTyped(): WindowManager.LayoutParams = layoutParams
 
     private var isMinimized = false
     private var isSettingsPanelExpanded = false
@@ -56,7 +61,7 @@ class FloatingControlView(
         gravity = Gravity.CENTER_VERTICAL
     }
 
-    // Tier 2: Settings + Delete + Exit Lock + Minimize
+    // Tier 2: Settings + Delete + Exit Lock (Checkmark) + Preview (Eye) + Exit App (Door)
     private val rowTier2 = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
@@ -105,22 +110,19 @@ class FloatingControlView(
         onDeleteSelected()
     }
 
-    // Button: Exit Edit Mode / Lock shapes (Tier 2)
-    private val btnExit = createIconButton(R.drawable.ic_exit_lock, context.getString(R.string.btn_lock_done)) {
+    // Button: Exit Edit Mode / Lock & Done (Checkmark icon) (Tier 2)
+    private val btnExit = createIconButton(R.drawable.ic_check_done, context.getString(R.string.btn_lock_done)) {
         onExitEditMode()
     }
 
-    // Button: Minimize Toolbar (Tier 2)
-    private val btnMinimize = TextView(context).apply {
-        text = "─"
-        textSize = 17f
-        setTextColor(Color.parseColor("#94A3B8"))
-        gravity = Gravity.CENTER
-        val size = (32 * context.resources.displayMetrics.density).toInt()
-        layoutParams = LinearLayout.LayoutParams(size, size).apply {
-            setMargins(2, 0, 2, 0)
-        }
-        setOnClickListener { toggleMinimize() }
+    // Button: Preview Mode (Eye Icon) (Tier 2)
+    private val btnMinimize = createIconButton(R.drawable.ic_preview_eye, context.getString(R.string.floating_btn_minimize_desc)) {
+        toggleMinimize()
+    }
+
+    // Button: Exit App (Door with arrow icon) (Tier 2) - Directly kills the app
+    private val btnExitApp = createIconButton(R.drawable.ic_exit_door, context.getString(R.string.floating_btn_exit_app_desc)) {
+        onExitApp()
     }
 
     // Minimized Floating Pill Bubble
@@ -189,15 +191,18 @@ class FloatingControlView(
         setPadding(0, 0, 0, 4)
     }
 
-// Sliders
-    private lateinit var seekWidth: SeekBar
-    private lateinit var txtWidthVal: TextView
-    private lateinit var seekHeight: SeekBar
-    private lateinit var txtHeightVal: TextView
-    private lateinit var seekPosX: SeekBar
-    private lateinit var txtPosXVal: TextView
-    private lateinit var seekPosY: SeekBar
-    private lateinit var txtPosYVal: TextView
+    // High Precision Sliders (1000 steps + micro steppers)
+    private data class SliderRowComponents(
+        val container: LinearLayout,
+        val seekBar: SeekBar,
+        val valueTextView: TextView,
+        val setProgressInternal: (Int) -> Unit
+    )
+
+    private lateinit var seekWidthComponents: SliderRowComponents
+    private lateinit var seekHeightComponents: SliderRowComponents
+    private lateinit var seekPosXComponents: SliderRowComponents
+    private lateinit var seekPosYComponents: SliderRowComponents
 
     // Advanced Color & Alpha Picker
     private lateinit var colorPicker: AdvancedColorPickerView
@@ -232,12 +237,42 @@ class FloatingControlView(
         setPadding(0, 2, 0, 0)
     }
 
-    // Color Palette Container
-    private val colorPaletteRow = LinearLayout(context).apply {
-        orientation = LinearLayout.HORIZONTAL
-        gravity = Gravity.CENTER_VERTICAL
-        val p = (2 * context.resources.displayMetrics.density).toInt()
-        setPadding(0, p, 0, p)
+    // Physical Pixel Lock Switch & Explanation (Screen Crack Fixed-Location)
+    private val physicalLockContainer = LinearLayout(context).apply {
+        orientation = LinearLayout.VERTICAL
+        val p = (6 * context.resources.displayMetrics.density).toInt()
+        val topM = (6 * context.resources.displayMetrics.density).toInt()
+        setPadding(p, p, p, p)
+        layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply {
+            setMargins(0, topM, 0, 0)
+        }
+        background = GradientDrawable().apply {
+            setColor(Color.parseColor("#3310B981")) // Subtle Emerald Green Accent
+            cornerRadius = 10f * context.resources.displayMetrics.density
+            setStroke(1, Color.parseColor("#10B981"))
+        }
+    }
+
+    private val switchPhysicalLock = Switch(context).apply {
+        text = context.getString(R.string.physical_lock_title)
+        setTextColor(Color.WHITE)
+        textSize = 12f
+        isChecked = true
+        setOnCheckedChangeListener { _, isChecked ->
+            currentSelectedMask?.let { mask ->
+                onUpdateMask(mask.copy(isPhysicalLock = isChecked))
+            }
+        }
+    }
+
+    private val txtPhysicalLockExplanation = TextView(context).apply {
+        text = context.getString(R.string.physical_lock_explanation)
+        setTextColor(Color.parseColor("#A7F3D0"))
+        textSize = 10.5f
+        setPadding(0, 2, 0, 0)
     }
 
     init {
@@ -248,11 +283,12 @@ class FloatingControlView(
         rowTier1.addView(btnAddParallelogram)
         rowTier1.addView(btnDuplicate)
 
-        // Build Tier 2 (Settings, Delete, Exit Lock, Minimize)
+        // Build Tier 2 (Settings, Delete, Lock/Done [Checkmark], Preview [Eye], Exit App [Door])
         rowTier2.addView(btnSettings)
         rowTier2.addView(btnDelete)
         rowTier2.addView(btnExit)
         rowTier2.addView(btnMinimize)
+        rowTier2.addView(btnExitApp)
 
         mainToolbar.addView(rowTier1)
         mainToolbar.addView(rowTier2)
@@ -285,40 +321,32 @@ class FloatingControlView(
     private fun buildSettingsPanelContent() {
         settingsPanel.addView(txtPanelTitle)
 
-        // Sliders
-        val (wRow, wSeek, wTxt) = createSliderRow(context.getString(R.string.slider_width), 100) { progress ->
-            val wRatio = (progress / 100f).coerceIn(0.01f, 1.0f)
+        // High Precision Sliders (1000 sub-steps for exact pixel level precision)
+        seekWidthComponents = createSliderRow(context.getString(R.string.slider_width), 1000) { ratio ->
+            val wRatio = ratio.coerceIn(0.001f, 1.0f)
             currentSelectedMask?.let { onUpdateMask(it.copy(widthRatio = wRatio)) }
         }
-        seekWidth = wSeek
-        txtWidthVal = wTxt
-        settingsPanel.addView(wRow)
+        settingsPanel.addView(seekWidthComponents.container)
 
-        val (hRow, hSeek, hTxt) = createSliderRow(context.getString(R.string.slider_height), 100) { progress ->
-            val hRatio = (progress / 100f).coerceIn(0.005f, 1.0f)
+        seekHeightComponents = createSliderRow(context.getString(R.string.slider_height), 1000) { ratio ->
+            val hRatio = ratio.coerceIn(0.001f, 1.0f)
             currentSelectedMask?.let { onUpdateMask(it.copy(heightRatio = hRatio)) }
         }
-        seekHeight = hSeek
-        txtHeightVal = hTxt
-        settingsPanel.addView(hRow)
+        settingsPanel.addView(seekHeightComponents.container)
 
-        val (xRow, xSeek, xTxt) = createSliderRow(context.getString(R.string.slider_pos_x), 100) { progress ->
-            val xRatio = (progress / 100f).coerceIn(0.0f, 1.0f)
+        seekPosXComponents = createSliderRow(context.getString(R.string.slider_pos_x), 1000) { ratio ->
+            val xRatio = ratio.coerceIn(0.0f, 1.0f)
             currentSelectedMask?.let { onUpdateMask(it.copy(xRatio = xRatio)) }
         }
-        seekPosX = xSeek
-        txtPosXVal = xTxt
-        settingsPanel.addView(xRow)
+        settingsPanel.addView(seekPosXComponents.container)
 
-        val (yRow, ySeek, yTxt) = createSliderRow(context.getString(R.string.slider_pos_y), 100) { progress ->
-            val yRatio = (progress / 100f).coerceIn(0.0f, 1.0f)
+        seekPosYComponents = createSliderRow(context.getString(R.string.slider_pos_y), 1000) { ratio ->
+            val yRatio = ratio.coerceIn(0.0f, 1.0f)
             currentSelectedMask?.let { onUpdateMask(it.copy(yRatio = yRatio)) }
         }
-        seekPosY = ySeek
-        txtPosYVal = yTxt
-        settingsPanel.addView(yRow)
+        settingsPanel.addView(seekPosYComponents.container)
 
-        // Advanced Color Picker Component (replaces flat palette & separate opacity slider)
+        // Advanced Color Picker Component
         colorPicker = AdvancedColorPickerView(context) { colorArgb, alpha ->
             currentSelectedMask?.let { mask ->
                 onUpdateMask(mask.copy(colorArgb = colorArgb, alpha = alpha))
@@ -330,19 +358,26 @@ class FloatingControlView(
         touchThroughContainer.addView(switchTouchThrough)
         touchThroughContainer.addView(txtTouchExplanation)
         settingsPanel.addView(touchThroughContainer)
+
+        // Physical Pixel Lock Section
+        physicalLockContainer.addView(switchPhysicalLock)
+        physicalLockContainer.addView(txtPhysicalLockExplanation)
+        settingsPanel.addView(physicalLockContainer)
     }
 
     private fun createSliderRow(
         title: String,
-        maxVal: Int,
-        onProgress: (Int) -> Unit
-    ): Triple<LinearLayout, SeekBar, TextView> {
+        maxVal: Int = 1000,
+        onProgress: (Float) -> Unit
+    ): SliderRowComponents {
         val row = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(0, 1, 0, 1)
+            val p = (2 * context.resources.displayMetrics.density).toInt()
+            setPadding(0, p, 0, p)
         }
         val header = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
         }
         val lbl = TextView(context).apply {
             text = title
@@ -351,33 +386,95 @@ class FloatingControlView(
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
         }
         val valTxt = TextView(context).apply {
-            text = "50%"
+            text = "50.0%"
             textSize = 10.5f
+            typeface = android.graphics.Typeface.MONOSPACE
             setTextColor(Color.parseColor("#38BDF8"))
         }
         header.addView(lbl)
         header.addView(valTxt)
         row.addView(header)
 
-        val seekBar = SeekBar(context).apply {
+        // Control row with [-] SeekBar [+] for micro-precision adjustment
+        val sliderControlRow = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            val topM = (1 * context.resources.displayMetrics.density).toInt()
+            setPadding(0, topM, 0, 0)
+        }
+
+        var isUpdating = false
+        lateinit var seekBar: SeekBar
+
+        val btnMinus = TextView(context).apply {
+            text = "−"
+            textSize = 14f
+            setTextColor(Color.parseColor("#E2E8F0"))
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            val s = (22 * context.resources.displayMetrics.density).toInt()
+            layoutParams = LinearLayout.LayoutParams(s, s)
+            background = GradientDrawable().apply {
+                setColor(Color.parseColor("#334155"))
+                cornerRadius = 6f * context.resources.displayMetrics.density
+            }
+            setOnClickListener {
+                val nextProg = (seekBar.progress - 1).coerceAtLeast(0)
+                seekBar.progress = nextProg
+            }
+        }
+
+        val btnPlus = TextView(context).apply {
+            text = "+"
+            textSize = 14f
+            setTextColor(Color.parseColor("#E2E8F0"))
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            val s = (22 * context.resources.displayMetrics.density).toInt()
+            layoutParams = LinearLayout.LayoutParams(s, s)
+            background = GradientDrawable().apply {
+                setColor(Color.parseColor("#334155"))
+                cornerRadius = 6f * context.resources.displayMetrics.density
+            }
+            setOnClickListener {
+                val nextProg = (seekBar.progress + 1).coerceAtMost(maxVal)
+                seekBar.progress = nextProg
+            }
+        }
+
+        seekBar = SeekBar(context).apply {
             max = maxVal
-            progress = 50
+            progress = 500
             progressTintList = ColorStateList.valueOf(Color.parseColor("#38BDF8"))
             thumbTintList = ColorStateList.valueOf(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
-                    if (fromUser) {
-                        valTxt.text = "$progress%"
-                        onProgress(progress)
+                    val ratio = progress.toFloat() / maxVal.toFloat()
+                    valTxt.text = String.format(Locale.US, "%.1f%%", ratio * 100f)
+                    if (fromUser || !isUpdating) {
+                        onProgress(ratio)
                     }
                 }
                 override fun onStartTrackingTouch(sb: SeekBar?) {}
                 override fun onStopTrackingTouch(sb: SeekBar?) {}
             })
         }
-        row.addView(seekBar)
 
-        return Triple(row, seekBar, valTxt)
+        sliderControlRow.addView(btnMinus)
+        sliderControlRow.addView(seekBar)
+        sliderControlRow.addView(btnPlus)
+        row.addView(sliderControlRow)
+
+        val setProgressFunc: (Int) -> Unit = { prog ->
+            isUpdating = true
+            seekBar.progress = prog.coerceIn(0, maxVal)
+            val ratio = seekBar.progress.toFloat() / maxVal.toFloat()
+            valTxt.text = String.format(Locale.US, "%.1f%%", ratio * 100f)
+            isUpdating = false
+        }
+
+        return SliderRowComponents(row, seekBar, valTxt, setProgressFunc)
     }
 
     fun updateState(selectedMask: MaskEntity?) {
@@ -385,17 +482,18 @@ class FloatingControlView(
 
         if (selectedMask != null) {
             txtPanelTitle.text = selectedMask.title
-            seekWidth.progress = (selectedMask.widthRatio * 100).toInt()
-            txtWidthVal.text = "${(selectedMask.widthRatio * 100).toInt()}%"
 
-            seekHeight.progress = (selectedMask.heightRatio * 100).toInt()
-            txtHeightVal.text = "${(selectedMask.heightRatio * 100).toInt()}%"
+            val wProg = (selectedMask.widthRatio * 1000).roundToInt()
+            seekWidthComponents.setProgressInternal(wProg)
 
-            seekPosX.progress = (selectedMask.xRatio * 100).toInt()
-            txtPosXVal.text = "${(selectedMask.xRatio * 100).toInt()}%"
+            val hProg = (selectedMask.heightRatio * 1000).roundToInt()
+            seekHeightComponents.setProgressInternal(hProg)
 
-            seekPosY.progress = (selectedMask.yRatio * 100).toInt()
-            txtPosYVal.text = "${(selectedMask.yRatio * 100).toInt()}%"
+            val xProg = (selectedMask.xRatio * 1000).roundToInt()
+            seekPosXComponents.setProgressInternal(xProg)
+
+            val yProg = (selectedMask.yRatio * 1000).roundToInt()
+            seekPosYComponents.setProgressInternal(yProg)
 
             colorPicker.setColor(selectedMask.colorArgb, selectedMask.alpha)
 
@@ -405,6 +503,16 @@ class FloatingControlView(
                 currentSelectedMask?.let { mask ->
                     if (mask.isTouchThrough != isChecked) {
                         onUpdateMask(mask.copy(isTouchThrough = isChecked))
+                    }
+                }
+            }
+
+            switchPhysicalLock.setOnCheckedChangeListener(null)
+            switchPhysicalLock.isChecked = selectedMask.isPhysicalLock
+            switchPhysicalLock.setOnCheckedChangeListener { _, isChecked ->
+                currentSelectedMask?.let { mask ->
+                    if (mask.isPhysicalLock != isChecked) {
+                        onUpdateMask(mask.copy(isPhysicalLock = isChecked))
                     }
                 }
             }
@@ -485,3 +593,4 @@ class FloatingControlView(
         }
     }
 }
+

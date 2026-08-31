@@ -8,10 +8,10 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.view.MotionEvent
+import android.view.Surface
 import android.view.View
 import com.example.data.MaskEntity
 import kotlin.math.max
-import kotlin.math.min
 
 @SuppressLint("ViewClickAndTouchUnspecified")
 class OverlayMaskView(
@@ -19,8 +19,9 @@ class OverlayMaskView(
     var mask: MaskEntity,
     var isEditMode: Boolean,
     var isMaskSelected: Boolean,
-    private val screenWidth: Int,
-    private val screenHeight: Int,
+    private var screenWidth: Int,
+    private var screenHeight: Int,
+    private var screenRotation: Int = Surface.ROTATION_0,
     private val onUpdate: (MaskEntity) -> Unit,
     private val onDelete: (String) -> Unit,
     private val onSelect: (String) -> Unit
@@ -70,14 +71,28 @@ class OverlayMaskView(
         NONE, CENTER, TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT
     }
 
+    private var currentLayout: PhysicalPixelTransformer.TransformedMaskLayout =
+        PhysicalPixelTransformer.calculateMaskLayout(mask, screenWidth, screenHeight, screenRotation)
+
     init {
         updatePaint()
     }
 
-    fun updateData(newMask: MaskEntity, editMode: Boolean, selected: Boolean) {
+    fun updateData(
+        newMask: MaskEntity,
+        editMode: Boolean,
+        selected: Boolean,
+        screenW: Int = screenWidth,
+        screenH: Int = screenHeight,
+        rotation: Int = screenRotation
+    ) {
         this.mask = newMask
         this.isEditMode = editMode
         this.isMaskSelected = selected
+        this.screenWidth = screenW
+        this.screenHeight = screenH
+        this.screenRotation = rotation
+        this.currentLayout = PhysicalPixelTransformer.calculateMaskLayout(mask, screenWidth, screenHeight, screenRotation)
         updatePaint()
         invalidate()
     }
@@ -100,12 +115,12 @@ class OverlayMaskView(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        val width = width.toFloat()
-        val height = height.toFloat()
+        val w = width.toFloat()
+        val h = height.toFloat()
+        if (w <= 0 || h <= 0) return
 
-        if (width <= 0 || height <= 0) return
-
-        val rect = RectF(0f, 0f, width, height)
+        val layout = currentLayout
+        val rect = RectF(0f, 0f, w, h)
         val cornerRadiusPx = mask.cornerRadiusDp * context.resources.displayMetrics.density
 
         // 1. Draw Mask Shape
@@ -116,21 +131,12 @@ class OverlayMaskView(
             MaskEntity.SHAPE_ROUNDED -> {
                 canvas.drawRoundRect(rect, cornerRadiusPx, cornerRadiusPx, maskPaint)
             }
-            MaskEntity.SHAPE_FREE_QUAD -> {
+            MaskEntity.SHAPE_FREE_QUAD, MaskEntity.SHAPE_RECT -> {
                 quadPath.reset()
-                val x1 = mask.p1x * width
-                val y1 = mask.p1y * height
-                val x2 = mask.p2x * width
-                val y2 = mask.p2y * height
-                val x3 = mask.p3x * width
-                val y3 = mask.p3y * height
-                val x4 = mask.p4x * width
-                val y4 = mask.p4y * height
-
-                quadPath.moveTo(x1, y1)
-                quadPath.lineTo(x2, y2)
-                quadPath.lineTo(x3, y3)
-                quadPath.lineTo(x4, y4)
+                quadPath.moveTo(layout.q1.x, layout.q1.y)
+                quadPath.lineTo(layout.q2.x, layout.q2.y)
+                quadPath.lineTo(layout.q3.x, layout.q3.y)
+                quadPath.lineTo(layout.q4.x, layout.q4.y)
                 quadPath.close()
 
                 canvas.drawPath(quadPath, maskPaint)
@@ -147,27 +153,15 @@ class OverlayMaskView(
             when (mask.shapeType) {
                 MaskEntity.SHAPE_CIRCLE -> {
                     canvas.drawOval(rect, paintToUse)
-                    drawCornerHandles(canvas, 0f, 0f, width, 0f, width, height, 0f, height)
+                    drawCornerHandles(canvas, layout.q1.x, layout.q1.y, layout.q2.x, layout.q2.y, layout.q3.x, layout.q3.y, layout.q4.x, layout.q4.y)
                 }
                 MaskEntity.SHAPE_ROUNDED -> {
                     canvas.drawRoundRect(rect, cornerRadiusPx, cornerRadiusPx, paintToUse)
-                    drawCornerHandles(canvas, 0f, 0f, width, 0f, width, height, 0f, height)
-                }
-                MaskEntity.SHAPE_FREE_QUAD -> {
-                    canvas.drawPath(quadPath, paintToUse)
-                    val x1 = mask.p1x * width
-                    val y1 = mask.p1y * height
-                    val x2 = mask.p2x * width
-                    val y2 = mask.p2y * height
-                    val x3 = mask.p3x * width
-                    val y3 = mask.p3y * height
-                    val x4 = mask.p4x * width
-                    val y4 = mask.p4y * height
-                    drawCornerHandles(canvas, x1, y1, x2, y2, x3, y3, x4, y4)
+                    drawCornerHandles(canvas, layout.q1.x, layout.q1.y, layout.q2.x, layout.q2.y, layout.q3.x, layout.q3.y, layout.q4.x, layout.q4.y)
                 }
                 else -> {
-                    canvas.drawRect(rect, paintToUse)
-                    drawCornerHandles(canvas, 0f, 0f, width, 0f, width, height, 0f, height)
+                    canvas.drawPath(quadPath, paintToUse)
+                    drawCornerHandles(canvas, layout.q1.x, layout.q1.y, layout.q2.x, layout.q2.y, layout.q3.x, layout.q3.y, layout.q4.x, layout.q4.y)
                 }
             }
         }
@@ -221,177 +215,99 @@ class OverlayMaskView(
                 val dx = rawX - lastX
                 val dy = rawY - lastY
 
-                val currWidthPx = (mask.widthRatio * screenWidth)
-                val currHeightPx = (mask.heightRatio * screenHeight)
-                val currXPx = (mask.xRatio * screenWidth)
-                val currYPx = (mask.yRatio * screenHeight)
+                val deltaPhys = PhysicalPixelTransformer.windowDeltaToPhysical(dx, dy, screenRotation)
+                val dXp = deltaPhys.x
+                val dYp = deltaPhys.y
 
-                if (mask.shapeType == MaskEntity.SHAPE_FREE_QUAD) {
-                    // Calculate current absolute screen points for all 4 corners
-                    var x1 = currXPx + mask.p1x * currWidthPx
-                    var y1 = currYPx + mask.p1y * currHeightPx
-                    var x2 = currXPx + mask.p2x * currWidthPx
-                    var y2 = currYPx + mask.p2y * currHeightPx
-                    var x3 = currXPx + mask.p3x * currWidthPx
-                    var y3 = currYPx + mask.p3y * currHeightPx
-                    var x4 = currXPx + mask.p4x * currWidthPx
-                    var y4 = currYPx + mask.p4y * currHeightPx
+                val (w0, h0) = PhysicalPixelTransformer.getNaturalDimensions(screenWidth, screenHeight, screenRotation)
+                val currWidthPx = mask.widthRatio * w0
+                val currHeightPx = mask.heightRatio * h0
+                val currXPx = mask.xRatio * w0
+                val currYPx = mask.yRatio * h0
 
-                    when (activeHandle) {
-                        Handle.TOP_LEFT -> {
-                            x1 += dx
-                            y1 += dy
-                        }
-                        Handle.TOP_RIGHT -> {
-                            x2 += dx
-                            y2 += dy
-                        }
-                        Handle.BOTTOM_RIGHT -> {
-                            x3 += dx
-                            y3 += dy
-                        }
-                        Handle.BOTTOM_LEFT -> {
-                            x4 += dx
-                            y4 += dy
-                        }
-                        Handle.CENTER -> {
-                            x1 += dx
-                            y1 += dy
-                            x2 += dx
-                            y2 += dy
-                            x3 += dx
-                            y3 += dy
-                            x4 += dx
-                            y4 += dy
-                        }
-                        Handle.NONE -> {}
-                    }
-
-                    // Dynamically calculate bounding box enclosing all 4 points
-                    val minX = minOf(x1, x2, x3, x4)
-                    val maxX = maxOf(x1, x2, x3, x4)
-                    val minY = minOf(y1, y2, y3, y4)
-                    val maxY = maxOf(y1, y2, y3, y4)
-
-                    val newWidthPx = max(maxX - minX, 15f)
-                    val newHeightPx = max(maxY - minY, 15f)
-
-                    val newXRatio = (minX / screenWidth).coerceIn(-0.2f, 1.2f)
-                    val newYRatio = (minY / screenHeight).coerceIn(-0.2f, 1.2f)
-                    val newWRatio = (newWidthPx / screenWidth).coerceIn(0.01f, 1.5f)
-                    val newHRatio = (newHeightPx / screenHeight).coerceIn(0.005f, 1.5f)
-
-                    val newP1x = ((x1 - minX) / newWidthPx).coerceIn(0f, 1f)
-                    val newP1y = ((y1 - minY) / newHeightPx).coerceIn(0f, 1f)
-                    val newP2x = ((x2 - minX) / newWidthPx).coerceIn(0f, 1f)
-                    val newP2y = ((y2 - minY) / newHeightPx).coerceIn(0f, 1f)
-                    val newP3x = ((x3 - minX) / newWidthPx).coerceIn(0f, 1f)
-                    val newP3y = ((y3 - minY) / newHeightPx).coerceIn(0f, 1f)
-                    val newP4x = ((x4 - minX) / newWidthPx).coerceIn(0f, 1f)
-                    val newP4y = ((y4 - minY) / newHeightPx).coerceIn(0f, 1f)
-
-                    val updated = mask.copy(
-                        xRatio = newXRatio,
-                        yRatio = newYRatio,
-                        widthRatio = newWRatio,
-                        heightRatio = newHRatio,
-                        p1x = newP1x,
-                        p1y = newP1y,
-                        p2x = newP2x,
-                        p2y = newP2y,
-                        p3x = newP3x,
-                        p3y = newP3y,
-                        p4x = newP4x,
-                        p4y = newP4y,
-                        updatedAt = System.currentTimeMillis()
-                    )
-
-                    lastX = rawX
-                    lastY = rawY
-                    mask = updated
-                    onUpdate(updated)
-                    return true
-                }
-
-                // Standard resize / movement logic for rect, circle, rounded
-                val minWidthPx = 10f
-                val minHeightPx = 10f
-
-                var newX = currXPx
-                var newY = currYPx
-                var newW = currWidthPx
-                var newH = currHeightPx
+                var x1 = currXPx + mask.p1x * currWidthPx
+                var y1 = currYPx + mask.p1y * currHeightPx
+                var x2 = currXPx + mask.p2x * currWidthPx
+                var y2 = currYPx + mask.p2y * currHeightPx
+                var x3 = currXPx + mask.p3x * currWidthPx
+                var y3 = currYPx + mask.p3y * currHeightPx
+                var x4 = currXPx + mask.p4x * currWidthPx
+                var y4 = currYPx + mask.p4y * currHeightPx
 
                 when (activeHandle) {
-                    Handle.CENTER -> {
-                        newX += dx
-                        newY += dy
-                    }
                     Handle.TOP_LEFT -> {
-                        val potentialW = currWidthPx - dx
-                        val potentialH = currHeightPx - dy
-                        if (potentialW >= minWidthPx) {
-                            newW = potentialW
-                            newX = currXPx + dx
-                        }
-                        if (potentialH >= minHeightPx) {
-                            newH = potentialH
-                            newY = currYPx + dy
-                        }
+                        x1 += dXp
+                        y1 += dYp
                     }
                     Handle.TOP_RIGHT -> {
-                        val potentialW = currWidthPx + dx
-                        val potentialH = currHeightPx - dy
-                        if (potentialW >= minWidthPx) {
-                            newW = potentialW
-                        }
-                        if (potentialH >= minHeightPx) {
-                            newH = potentialH
-                            newY = currYPx + dy
-                        }
-                    }
-                    Handle.BOTTOM_LEFT -> {
-                        val potentialW = currWidthPx - dx
-                        val potentialH = currHeightPx + dy
-                        if (potentialW >= minWidthPx) {
-                            newW = potentialW
-                            newX = currXPx + dx
-                        }
-                        if (potentialH >= minHeightPx) {
-                            newH = potentialH
-                        }
+                        x2 += dXp
+                        y2 += dYp
                     }
                     Handle.BOTTOM_RIGHT -> {
-                        val potentialW = currWidthPx + dx
-                        val potentialH = currHeightPx + dy
-                        if (potentialW >= minWidthPx) {
-                            newW = potentialW
-                        }
-                        if (potentialH >= minHeightPx) {
-                            newH = potentialH
-                        }
+                        x3 += dXp
+                        y3 += dYp
+                    }
+                    Handle.BOTTOM_LEFT -> {
+                        x4 += dXp
+                        y4 += dYp
+                    }
+                    Handle.CENTER -> {
+                        x1 += dXp
+                        y1 += dYp
+                        x2 += dXp
+                        y2 += dYp
+                        x3 += dXp
+                        y3 += dYp
+                        x4 += dXp
+                        y4 += dYp
                     }
                     Handle.NONE -> {}
                 }
 
-                lastX = rawX
-                lastY = rawY
+                // Recalculate bounding box in physical space
+                val minX = minOf(x1, x2, x3, x4)
+                val maxX = maxOf(x1, x2, x3, x4)
+                val minY = minOf(y1, y2, y3, y4)
+                val maxY = maxOf(y1, y2, y3, y4)
 
-                val minWRatio = 5f / max(screenWidth.toFloat(), 1f)
-                val minHRatio = 5f / max(screenHeight.toFloat(), 1f)
-                val newXRatio = (newX / screenWidth).coerceIn(-0.2f, 1.0f)
-                val newYRatio = (newY / screenHeight).coerceIn(-0.2f, 1.0f)
-                val newWRatio = (newW / screenWidth).coerceIn(minWRatio, 1.0f)
-                val newHRatio = (newH / screenHeight).coerceIn(minHRatio, 1.0f)
+                val newWidthPx = max(maxX - minX, 10f)
+                val newHeightPx = max(maxY - minY, 10f)
+
+                val newXRatio = (minX / w0).coerceIn(-0.2f, 1.2f)
+                val newYRatio = (minY / h0).coerceIn(-0.2f, 1.2f)
+                val newWRatio = (newWidthPx / w0).coerceIn(0.001f, 1.5f)
+                val newHRatio = (newHeightPx / h0).coerceIn(0.001f, 1.5f)
+
+                val isFreeQuad = mask.shapeType == MaskEntity.SHAPE_FREE_QUAD
+                val newP1x = if (isFreeQuad) ((x1 - minX) / newWidthPx).coerceIn(0f, 1f) else 0f
+                val newP1y = if (isFreeQuad) ((y1 - minY) / newHeightPx).coerceIn(0f, 1f) else 0f
+                val newP2x = if (isFreeQuad) ((x2 - minX) / newWidthPx).coerceIn(0f, 1f) else 1f
+                val newP2y = if (isFreeQuad) ((y2 - minY) / newHeightPx).coerceIn(0f, 1f) else 0f
+                val newP3x = if (isFreeQuad) ((x3 - minX) / newWidthPx).coerceIn(0f, 1f) else 1f
+                val newP3y = if (isFreeQuad) ((y3 - minY) / newHeightPx).coerceIn(0f, 1f) else 1f
+                val newP4x = if (isFreeQuad) ((x4 - minX) / newWidthPx).coerceIn(0f, 1f) else 0f
+                val newP4y = if (isFreeQuad) ((y4 - minY) / newHeightPx).coerceIn(0f, 1f) else 1f
 
                 val updated = mask.copy(
                     xRatio = newXRatio,
                     yRatio = newYRatio,
                     widthRatio = newWRatio,
                     heightRatio = newHRatio,
+                    p1x = newP1x,
+                    p1y = newP1y,
+                    p2x = newP2x,
+                    p2y = newP2y,
+                    p3x = newP3x,
+                    p3y = newP3y,
+                    p4x = newP4x,
+                    p4y = newP4y,
                     updatedAt = System.currentTimeMillis()
                 )
+
+                lastX = rawX
+                lastY = rawY
                 mask = updated
+                currentLayout = PhysicalPixelTransformer.calculateMaskLayout(mask, screenWidth, screenHeight, screenRotation)
                 onUpdate(updated)
                 return true
             }
@@ -405,34 +321,13 @@ class OverlayMaskView(
     }
 
     private fun determineHandle(x: Float, y: Float): Handle {
-        val w = width.toFloat()
-        val h = height.toFloat()
         val touchMargin = handleRadius * 2.8f
-
-        if (mask.shapeType == MaskEntity.SHAPE_FREE_QUAD) {
-            val x1 = mask.p1x * w
-            val y1 = mask.p1y * h
-            val x2 = mask.p2x * w
-            val y2 = mask.p2y * h
-            val x3 = mask.p3x * w
-            val y3 = mask.p3y * h
-            val x4 = mask.p4x * w
-            val y4 = mask.p4y * h
-
-            return when {
-                RectF(x1 - touchMargin, y1 - touchMargin, x1 + touchMargin, y1 + touchMargin).contains(x, y) -> Handle.TOP_LEFT
-                RectF(x2 - touchMargin, y2 - touchMargin, x2 + touchMargin, y2 + touchMargin).contains(x, y) -> Handle.TOP_RIGHT
-                RectF(x3 - touchMargin, y3 - touchMargin, x3 + touchMargin, y3 + touchMargin).contains(x, y) -> Handle.BOTTOM_RIGHT
-                RectF(x4 - touchMargin, y4 - touchMargin, x4 + touchMargin, y4 + touchMargin).contains(x, y) -> Handle.BOTTOM_LEFT
-                else -> Handle.CENTER
-            }
-        }
-
+        val layout = currentLayout
         return when {
-            RectF(-touchMargin, -touchMargin, touchMargin, touchMargin).contains(x, y) -> Handle.TOP_LEFT
-            RectF(w - touchMargin, -touchMargin, w + touchMargin, touchMargin).contains(x, y) -> Handle.TOP_RIGHT
-            RectF(-touchMargin, h - touchMargin, touchMargin, h + touchMargin).contains(x, y) -> Handle.BOTTOM_LEFT
-            RectF(w - touchMargin, h - touchMargin, w + touchMargin, h + touchMargin).contains(x, y) -> Handle.BOTTOM_RIGHT
+            RectF(layout.q1.x - touchMargin, layout.q1.y - touchMargin, layout.q1.x + touchMargin, layout.q1.y + touchMargin).contains(x, y) -> Handle.TOP_LEFT
+            RectF(layout.q2.x - touchMargin, layout.q2.y - touchMargin, layout.q2.x + touchMargin, layout.q2.y + touchMargin).contains(x, y) -> Handle.TOP_RIGHT
+            RectF(layout.q3.x - touchMargin, layout.q3.y - touchMargin, layout.q3.x + touchMargin, layout.q3.y + touchMargin).contains(x, y) -> Handle.BOTTOM_RIGHT
+            RectF(layout.q4.x - touchMargin, layout.q4.y - touchMargin, layout.q4.x + touchMargin, layout.q4.y + touchMargin).contains(x, y) -> Handle.BOTTOM_LEFT
             else -> Handle.CENTER
         }
     }

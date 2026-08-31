@@ -7,11 +7,13 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.PixelFormat
 import android.graphics.Point
 import android.os.Build
 import android.os.IBinder
 import android.view.Gravity
+import android.view.Surface
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 import com.example.MainActivity
@@ -41,12 +43,22 @@ class OverlayService : Service() {
     private var isEditMode = true
     private var selectedMaskId: String? = null
 
+    // Screen dimensions and rotation tracking to preserve exact physical position
+    private var oldScreenWidth: Int = 0
+    private var oldScreenHeight: Int = 0
+    private var oldRotation: Int = Surface.ROTATION_0
+
     override fun onCreate() {
         super.onCreate()
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         val db = AppDatabase.getInstance(this)
         maskRepository = MaskRepository.getInstance(db)
         settingsRepository = AppSettingsRepository.getInstance(this)
+
+        val (initialW, initialH) = getScreenDimensions()
+        oldScreenWidth = initialW
+        oldScreenHeight = initialH
+        oldRotation = getScreenRotation()
 
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, buildNotification())
@@ -57,8 +69,7 @@ class OverlayService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_STOP_SERVICE -> {
-                settingsRepository.setServiceActive(false)
-                stopSelf()
+                killAndExitApp()
                 return START_NOT_STICKY
             }
             ACTION_START_EDIT_MODE -> {
@@ -114,6 +125,7 @@ class OverlayService : Service() {
 
     private fun refreshAllMaskViews() {
         val (screenWidth, screenHeight) = getScreenDimensions()
+        val screenRotation = getScreenRotation()
 
         // 1. Remove views that no longer exist in DB
         val existingIds = currentMaskList.map { it.id }.toSet()
@@ -128,6 +140,8 @@ class OverlayService : Service() {
             }
             activeMaskViews.remove(id)
         }
+
+        var newMaskAdded = false
 
         // 2. Add or update active visible masks
         currentMaskList.forEach { mask ->
@@ -144,11 +158,11 @@ class OverlayService : Service() {
             }
 
             val isSelected = mask.id == selectedMaskId
-            val params = createMaskLayoutParams(mask, isEditMode, screenWidth, screenHeight)
+            val params = createMaskLayoutParams(mask, isEditMode, screenWidth, screenHeight, screenRotation)
 
             if (activeMaskViews.containsKey(mask.id)) {
                 val (view, _) = activeMaskViews[mask.id]!!
-                view.updateData(mask, isEditMode, isSelected)
+                view.updateData(mask, isEditMode, isSelected, screenWidth, screenHeight, screenRotation)
                 try {
                     windowManager.updateViewLayout(view, params)
                 } catch (e: Exception) {
@@ -163,6 +177,7 @@ class OverlayService : Service() {
                     isMaskSelected = isSelected,
                     screenWidth = screenWidth,
                     screenHeight = screenHeight,
+                    screenRotation = screenRotation,
                     onUpdate = { updatedMask ->
                         serviceScope.launch(Dispatchers.IO) {
                             maskRepository.updateMask(updatedMask)
@@ -184,15 +199,16 @@ class OverlayService : Service() {
                 try {
                     windowManager.addView(maskView, params)
                     activeMaskViews[mask.id] = Pair(maskView, params)
+                    newMaskAdded = true
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
             }
         }
 
-        // 3. Update or attach Floating Control Bar in Edit Mode
+        // 3. Update or attach Floating Control Bar in Edit Mode (ensure it stays on top of all mask shapes)
         if (isEditMode) {
-            showFloatingController()
+            showFloatingController(forceReattach = newMaskAdded)
         } else {
             hideFloatingController()
         }
@@ -202,7 +218,8 @@ class OverlayService : Service() {
         mask: MaskEntity,
         editMode: Boolean,
         screenWidth: Int,
-        screenHeight: Int
+        screenHeight: Int,
+        rotation: Int
     ): WindowManager.LayoutParams {
         val flags = if (editMode && !mask.isLocked) {
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
@@ -221,28 +238,40 @@ class OverlayService : Service() {
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
         }
 
-        val pxX = (mask.xRatio * screenWidth).toInt()
-        val pxY = (mask.yRatio * screenHeight).toInt()
-        val pxWidth = (mask.widthRatio * screenWidth).toInt().coerceAtLeast(1)
-        val pxHeight = (mask.heightRatio * screenHeight).toInt().coerceAtLeast(1)
+        val layout = PhysicalPixelTransformer.calculateMaskLayout(mask, screenWidth, screenHeight, rotation)
 
         return WindowManager.LayoutParams(
-            pxWidth,
-            pxHeight,
+            layout.winWidth,
+            layout.winHeight,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             flags,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = pxX
-            y = pxY
+            x = layout.winX
+            y = layout.winY
         }
     }
 
-    private fun showFloatingController() {
+    private fun showFloatingController(forceReattach: Boolean = false) {
         val selectedMask = currentMaskList.find { it.id == selectedMaskId } ?: currentMaskList.firstOrNull()
 
-        if (floatingControlView == null) {
+        if (floatingControlView != null && forceReattach) {
+            try {
+                val params = floatingControlView?.getLayoutParamsTyped()
+                if (params != null) {
+                    windowManager.removeView(floatingControlView)
+                    windowManager.addView(floatingControlView, params)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        } else if (floatingControlView == null) {
+            val (screenWidth, _) = getScreenDimensions()
+            val initialWidth = (280 * resources.displayMetrics.density).toInt()
+            val initialX = ((screenWidth - initialWidth) / 2).coerceAtLeast(0)
+            val initialY = (80 * resources.displayMetrics.density).toInt()
+
             val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -251,8 +280,9 @@ class OverlayService : Service() {
                         WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
                 PixelFormat.TRANSLUCENT
             ).apply {
-                gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-                y = 80
+                gravity = Gravity.TOP or Gravity.START
+                x = initialX
+                y = initialY
             }
 
             val controlView = FloatingControlView(
@@ -293,6 +323,9 @@ class OverlayService : Service() {
                             settingsRepository.setSelectedMaskId(duplicated.id)
                         }
                     }
+                },
+                onExitApp = {
+                    killAndExitApp()
                 }
             )
 
@@ -307,6 +340,78 @@ class OverlayService : Service() {
         floatingControlView?.updateState(selectedMask)
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        handleOrientationChange()
+    }
+
+    /**
+     * Handles screen rotation changes, recalculates floating icon position across 0°, 90°, 180°, 270°,
+     * and refreshes overlay masks to conform to new dimensions.
+     */
+    private fun handleOrientationChange() {
+        val (newWidth, newHeight) = getScreenDimensions()
+        val newRotation = getScreenRotation()
+
+        if (oldScreenWidth > 0 && oldScreenHeight > 0) {
+            updateFloatingPositionOnRotation(
+                oldWidth = oldScreenWidth,
+                oldHeight = oldScreenHeight,
+                oldRotation = oldRotation,
+                newWidth = newWidth,
+                newHeight = newHeight,
+                newRotation = newRotation
+            )
+        }
+
+        oldScreenWidth = newWidth
+        oldScreenHeight = newHeight
+        oldRotation = newRotation
+
+        refreshAllMaskViews()
+    }
+
+    /**
+     * Preserves the floating icon / control bar's physical screen position across screen rotations
+     * (0°, 90°, 180°, 270°) by converting old coordinates into new coordinates and calling updateViewLayout.
+     */
+    fun updateFloatingPositionOnRotation(
+        oldWidth: Int,
+        oldHeight: Int,
+        oldRotation: Int,
+        newWidth: Int,
+        newHeight: Int,
+        newRotation: Int
+    ) {
+        val controlView = floatingControlView ?: return
+        val params = controlView.getLayoutParamsTyped()
+
+        val iconWidth = if (controlView.width > 0) controlView.width else params.width.coerceAtLeast(1)
+        val iconHeight = if (controlView.height > 0) controlView.height else params.height.coerceAtLeast(1)
+
+        val newPos = FloatingPositionCalculator.calculateRotatedPosition(
+            oldX = params.x,
+            oldY = params.y,
+            oldWidth = oldWidth,
+            oldHeight = oldHeight,
+            oldRotation = oldRotation,
+            newWidth = newWidth,
+            newHeight = newHeight,
+            newRotation = newRotation,
+            iconWidth = iconWidth,
+            iconHeight = iconHeight
+        )
+
+        params.x = newPos.x
+        params.y = newPos.y
+
+        try {
+            windowManager.updateViewLayout(controlView, params)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     private fun hideFloatingController() {
         floatingControlView?.let { view ->
             try {
@@ -316,6 +421,52 @@ class OverlayService : Service() {
             }
             floatingControlView = null
         }
+    }
+
+    /**
+     * Completely cleans up all overlay views, stops foreground service,
+     * and terminates the application process cleanly.
+     */
+    private fun killAndExitApp() {
+        try {
+            settingsRepository.setServiceActive(false)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        activeMaskViews.values.forEach { (view, _) ->
+            try {
+                windowManager.removeView(view)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        activeMaskViews.clear()
+
+        hideFloatingController()
+
+        try {
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.cancel(NOTIFICATION_ID)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+            } else {
+                @Suppress("DEPRECATION")
+                stopForeground(true)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        stopSelf()
+
+        android.os.Process.killProcess(android.os.Process.myPid())
+        kotlin.system.exitProcess(0)
     }
 
     private fun addNewMask(shapeType: String = MaskEntity.SHAPE_RECT) {
@@ -367,6 +518,20 @@ class OverlayService : Service() {
             @Suppress("DEPRECATION")
             windowManager.defaultDisplay.getRealSize(point)
             Pair(point.x, point.y)
+        }
+    }
+
+    private fun getScreenRotation(): Int {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                display?.rotation ?: windowManager.defaultDisplay.rotation
+            } catch (e: Exception) {
+                @Suppress("DEPRECATION")
+                windowManager.defaultDisplay.rotation
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.rotation
         }
     }
 

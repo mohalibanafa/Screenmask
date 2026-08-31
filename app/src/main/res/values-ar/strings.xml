@@ -23,8 +23,13 @@
     <string name="floating_btn_touch_desc">تبديل وضع اللمس</string>
     <string name="floating_btn_delete_desc">حذف الشكل المحدد</string>
     <string name="floating_btn_stop_desc">إيقاف الأشكال العائمة</string>
-    <string name="floating_btn_minimize_desc">تصغير شريط التحكم</string>
+    <string name="floating_btn_minimize_desc">وضع المعاينة</string>
     <string name="floating_btn_expand_desc">توسيع شريط التحكم</string>
+    <string name="floating_btn_exit_app_desc">الخروج من التطبيق وإغلاقه</string>
+    <string name="confirm_exit_title">الخروج من التطبيق</string>
+    <string name="confirm_exit_message">هل تريد إيقاف الأشكال العائمة وإغلاق التطبيق بالكامل؟</string>
+    <string name="confirm_exit_btn_confirm">خروج وإغلاق</string>
+    <string name="confirm_exit_btn_cancel">إلغاء</string>
 
     <string name="panel_title_edit">تعديل أبعاد ومظهر الشكل</string>
     <string name="panel_shape_type">نوع الشكل:</string>
@@ -55,6 +60,9 @@
     <string name="touch_through_explanation">💡 عند تشغيل هذا الوضع يصبح المجسم شبه شفاف لكن يمكن اللمس والنقر والتفاعل عبره على الشاشة وتطبيقاتك تحته بكل سلاسة.</string>
     <string name="touch_through_on">مُفَعّل (اللمس يمر عبر المجسم)</string>
     <string name="touch_through_off">معطّل (اللمس محجوب كلياً)</string>
+
+    <string name="physical_lock_title">تثبيت البكسل الفيزيائي (تغطية الكسر)</string>
+    <string name="physical_lock_explanation">🔒 يُثبت الشكل في نفس البكسلات الفيزيائية لزجاج الشاشة تماماً لتغطية الكسور والعيوب دون أن يدور أو يتزحزح الشكل عند تدوير الهاتف.</string>
 
     <string name="btn_duplicate_shape">تكرار</string>
     <string name="btn_delete_shape">حذف</string>

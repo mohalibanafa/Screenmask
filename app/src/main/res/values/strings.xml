@@ -22,8 +22,13 @@
     <string name="floating_btn_touch_desc">Toggle Touch-through</string>
     <string name="floating_btn_delete_desc">Delete Selected Shape</string>
     <string name="floating_btn_stop_desc">Stop Floating Shapes</string>
-    <string name="floating_btn_minimize_desc">Minimize Control Bar</string>
+    <string name="floating_btn_minimize_desc">Preview Mode</string>
     <string name="floating_btn_expand_desc">Expand Controls</string>
+    <string name="floating_btn_exit_app_desc">Exit &amp; Close App</string>
+    <string name="confirm_exit_title">Exit Screen Mask?</string>
+    <string name="confirm_exit_message">Are you sure you want to stop all screen masks and completely close the application?</string>
+    <string name="confirm_exit_btn_confirm">Exit App</string>
+    <string name="confirm_exit_btn_cancel">Cancel</string>
 
     <string name="panel_title_edit">Shape Customizer</string>
     <string name="panel_shape_type">Shape Type:</string>
@@ -54,6 +59,9 @@
     <string name="touch_through_explanation">💡 When enabled, the shape becomes semi-transparent so you can tap, scroll, and interact with the screen and apps directly through it.</string>
     <string name="touch_through_on">Enabled (Touch Passes Through)</string>
     <string name="touch_through_off">Disabled (Touch Blocked)</string>
+
+    <string name="physical_lock_title">Physical Pixel Lock (Screen Crack Fix)</string>
+    <string name="physical_lock_explanation">🔒 Locks the shape to the exact physical hardware pixels on the screen glass. It stays fixed in place even when the device rotates.</string>
 
     <string name="btn_duplicate_shape">Duplicate</string>
     <string name="btn_delete_shape">Delete</string>

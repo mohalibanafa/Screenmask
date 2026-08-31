@@ -20,6 +20,7 @@ data class MaskEntity(
     val isTouchThrough: Boolean = true, // When active/locked, allows touch pass-through
     val isLocked: Boolean = false,
     val isVisible: Boolean = true,
+    val isPhysicalLock: Boolean = true, // Anchors the shape to physical screen hardware pixels across rotation
     // Free Quad 4 Corner Ratios (0.0 .. 1.0 within the bounding box)
     val p1x: Float = 0f, // Top-Left X
     val p1y: Float = 0f, // Top-Left Y

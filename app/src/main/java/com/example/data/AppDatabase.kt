@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [MaskEntity::class], version = 5, exportSchema = false)
+@Database(entities = [MaskEntity::class], version = 6, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun maskDao(): MaskDao
 
@@ -19,7 +19,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "screen_mask_database"
-                ).fallbackToDestructiveMigration().build()
+                ).fallbackToDestructiveMigration(dropAllTables = true).build()
                 INSTANCE = instance
                 instance
             }
