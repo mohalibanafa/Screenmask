@@ -34,18 +34,19 @@ jobs:
             echo "GEMINI_API_KEY=dummy_key_for_ci" > .env
           fi
 
-      - name: Restore or Generate Debug Keystore
+      - name: Set up Release Keystore
         run: |
-          if [ -f debug.keystore.base64 ]; then
-            echo "Restoring debug keystore from debug.keystore.base64..."
-            base64 -d debug.keystore.base64 > debug.keystore
-          elif [ -f assets/.aistudio/debug.keystore.base64 ]; then
-            echo "Restoring debug keystore from assets/.aistudio/debug.keystore.base64..."
-            base64 -d assets/.aistudio/debug.keystore.base64 > debug.keystore
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "Decoding release keystore from secrets..."
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "${{ github.workspace }}/release.keystore"
           else
-            echo "No base64 keystore found. Generating a fresh debug keystore..."
-            keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+            echo "No secrets keystore found. Generating fallback..."
+            keytool -genkey -v -keystore "${{ github.workspace }}/release.keystore" -storepass "${{ secrets.STORE_PASSWORD || 'androidrelease123' }}" -alias "${{ secrets.KEY_ALIAS || 'upload' }}" -keypass "${{ secrets.KEY_PASSWORD || 'androidrelease123' }}" -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=mohalibanafa,O=mohalibanafa,C=SA"
           fi
+          echo "KEYSTORE_PATH=${{ github.workspace }}/release.keystore" >> $GITHUB_ENV
+          echo "STORE_PASSWORD=${{ secrets.STORE_PASSWORD || 'androidrelease123' }}" >> $GITHUB_ENV
+          echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD || 'androidrelease123' }}" >> $GITHUB_ENV
+          echo "KEY_ALIAS=${{ secrets.KEY_ALIAS || 'upload' }}" >> $GITHUB_ENV
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -59,13 +60,15 @@ jobs:
           chmod +x gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleRelease --no-daemon
 
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
-          name: app-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: app-release-apk
+          path: app/build/outputs/apk/release/app-release.apk
+          retention-days: 7
 
       - name: Create GitHub Release
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
@@ -74,7 +77,7 @@ jobs:
           tag_name: v1.0.${{ github.run_number }}
           name: Release v1.0.${{ github.run_number }}
           body: ${{ github.event.head_commit.message }}
-          files: app/build/outputs/apk/debug/app-debug.apk
+          files: app/build/outputs/apk/release/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
